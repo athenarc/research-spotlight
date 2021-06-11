@@ -1,4 +1,4 @@
-In this repository you can find code snipets from research spotlight workflows that were created specifically for educational purposes as part of the Tutorial given during 'The Web Conference 2019' in San fransisco. Further information can be found in the following references:
+In this repository you can find code snipets from research-spotlight workflows that were created specifically for educational purposes as part of the tutorial given during 'The Web Conference 2019' in San fransisco. Further information can be found in the following references:
 
 1) From Research Articles to Knowledge Graphs. Pertsas, Constantopoulos. The World Wide Web Conference (WWW). San Francisco. 2019
 
