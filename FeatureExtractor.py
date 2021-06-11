@@ -3,12 +3,10 @@ import en_core_web_sm
 import pandas as pd
 import numpy as np
 from sklearn.externals import joblib
-#from sklearn.grid_search import GridSearchCV
 from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
 from sklearn.ensemble import RandomForestClassifier
-#from sklearn.cross_validation import train_test_split
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn import svm, datasets
@@ -17,19 +15,9 @@ import gensim
 import InformationExtraction
 
 
-# from sklearn.metrics import precision_score, recall_score, f1_score
-# from sklearn.metrics import roc_curve, auc
-# from sklearn.model_selection import learning_curve
-# import matplotlib.pyplot as plt
-# from scipy import interp
-# from sklearn.metrics import roc_auc_score, accuracy_score
-#from sklearn.model_selection import StratifiedKFold
-#from sklearn.cross_validation import StratifiedKFold
-#from itertools import cycle
-
 ########################## functions that exist also in InformationExtraction module ###################
 def find_depended_node(node, parsed_sentence, dep_label):
-    #print node.orth_, dep_label
+    
     for token in parsed_sentence:
         #print token.orth_, token.dep_, token.head.orth_
         if token.dep_ == dep_label and token.head == node:
@@ -40,21 +28,13 @@ def createModelBagCountLists(model_name1, model_name2, model_name3, model_name4)
 	"""Input the various embeddings and output the Modellist, Baglist for 1-H encodings, and CountList for dectionaries with each tag"""
 	model_dict = list()
 	model_dict = {}
-	#model_name1 =path_name+'CreatingWordVectors/SavedVecModels/WordVec100sg10min.sav'
-	#model_name1 = 'CreatingWordVectors/SavedVecModels/GoogleNews-vectors-negative300.bin'
-	#model_name1 = gensim.models.KeyedVectors.load_word2vec_format('CreatingWordVectors/SavedVecModels/GoogleNews-vectors-negative300.bin', binary=True)
-	#model_dict.append(models.Word2Vec.load(model_name1))
+	
 	model_dict['wrd_emb'] = models.Word2Vec.load(model_name1)
-	#model_dict.append(gensim.models.KeyedVectors.load_word2vec_format(model_name1, binary=True))
-
-	#model_name2 =path_name+'CreatingWordVectors/SavedVecModels/TagVec25sg2min.sav'
-	#model_dict.append(models.Word2Vec.load(model_name2))
+	
 	model_dict['tag_emb'] = models.Word2Vec.load(model_name2)
-	#model_name3 =path_name+'CreatingWordVectors/SavedVecModels/PosVec25sg2min.sav'
-	#model_dict.append(models.Word2Vec.load(model_name3))
+	
 	model_dict['dep_emb'] = models.Word2Vec.load(model_name3)
-	#model_name4 =path_name+'CreatingWordVectors/SavedVecModels/DepVec25sg2min.sav'
-	#model_dict.append(models.Word2Vec.load(model_name4))
+	
 	model_dict['pos_emb'] = models.Word2Vec.load(model_name4)
 
 	tag_count = CountVectorizer()
@@ -74,9 +54,7 @@ def createModelBagCountLists(model_name1, model_name2, model_name3, model_name4)
 	bag_list = list()
 	tag_bag = tag_count.fit_transform(tag)
 	dep_bag = dep_count.fit_transform(dep)
-	#pos_bag = dep_count.fit_transform(pos)
 	bag_list.append(tag_bag)
-	#bag_list.append(pos_bag)
 	bag_list.append(dep_bag)
 
 	return model_dict, bag_list, count_list
@@ -118,8 +96,6 @@ def assign_token_attributes(t, parse, acts_in_sent, act_goals_in_sent, props_in_
 		't.is_part_of_rs_goal': is_part_of_rs_ent(t, parse, act_goals_in_sent, parse_str),
 		't.is_part_of_rs_prop': is_part_of_rs_ent(t, parse, props_in_sent, parse_str),
 
-		# 't.shape_': t.shape_,
-		# 't.lemma_ ': t.lemma_, 
 		't.head.lower_': t.head.lower_,
 		't.head.pos_': t.head.pos_,
 		't.head.tag_': t.head.tag_,
@@ -151,8 +127,7 @@ def assign_token_attributes(t, parse, acts_in_sent, act_goals_in_sent, props_in_
 		't.head.is_part_of_rs_act': is_part_of_rs_ent(t.head, parse, acts_in_sent, parse_str),
 		't.head.is_part_of_rs_goal': is_part_of_rs_ent(t.head, parse, act_goals_in_sent, parse_str),
 		't.head.is_part_of_rs_prop': is_part_of_rs_ent(t.head, parse, props_in_sent, parse_str),
-		# 't.head.shape_': t.head.shape_,
-		# 't.head.lemma_ ': t.head.lemma_, 
+
 		't.head.head.lower_': t.head.head.lower_,
 		't.head.head.pos_': t.head.head.pos_,
 		't.head.head.tag_': t.head.head.tag_,
@@ -184,8 +159,7 @@ def assign_token_attributes(t, parse, acts_in_sent, act_goals_in_sent, props_in_
 		't.head.head.is_part_of_rs_act': is_part_of_rs_ent(t.head.head, parse, acts_in_sent, parse_str),
 		't.head.head.is_part_of_rs_goal': is_part_of_rs_ent(t.head.head, parse, act_goals_in_sent, parse_str),
 		't.head.head.is_part_of_rs_prop': is_part_of_rs_ent(t.head.head, parse, props_in_sent, parse_str),
-		# 't.head.head.shape_': t.head.head.shape_,
-		# 't.head.head.lemma_ ': t.head.head.lemma_, 
+
 	}
 	return t_attributes
 
@@ -438,11 +412,11 @@ def indication_for_goal(t, spacy_parse):
 			goal_list.append(advcl.subtree)
 		elif prep:
 			if prep.head.lower_ == 'order':
-			# if t != prep.head and t!= prep.head.head:
+			
 				goal_list.append(prep.subtree)
 		elif acl:
 			if acl.head.lower_ == 'order':
-			# if t != acl.head and t!= acl.head.head:
+			
 				goal_list.append(acl.subtree)
 	flag = 0
 	for goal in goal_list:
