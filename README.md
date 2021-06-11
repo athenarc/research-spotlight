@@ -1,8 +1,10 @@
 In this repository you can find code snipets from research spotlight workflows that were created specifically for educational purposes as part of the Tutorial given during 'The Web Conference 2019' in San fransisco. Further information can be found in the following references:
 
-From Research Articles to Knowledge Graphs. Pertsas, Constantopoulos. The World Wide Web Conference (WWW). San Francisco. 2019
-Ontology Driven Extraction of Research Processes. Pertsas, Constantopoulos, Androutsopoulos. International Semantic Web Conference (ISWC). Monterey. 2018
-Ontology-Driven Information Extraction from Research Publications. Pertsas, Constantopoulos. International Conference on Transactions of Digital Libraries. Porto. 2018
+1) From Research Articles to Knowledge Graphs. Pertsas, Constantopoulos. The World Wide Web Conference (WWW). San Francisco. 2019
+
+2) Ontology Driven Extraction of Research Processes. Pertsas, Constantopoulos, Androutsopoulos. International Semantic Web Conference (ISWC). Monterey. 2018
+
+3) Ontology-Driven Information Extraction from Research Publications. Pertsas, Constantopoulos. International Conference on Transactions of Digital Libraries. Porto. 2018
 
 # Research Spotlight
 
