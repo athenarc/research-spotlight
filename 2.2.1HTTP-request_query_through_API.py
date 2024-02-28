@@ -33,7 +33,7 @@ def querySpringer(keyword, api_key):
     return url_list
 
 
-api_key =  '98cc5e59957077c43b061835ee669f06' #'your API key' # 
+api_key =  #'your API key' # 
 keyword = 'machine learning'
 url_list = querySpringer(keyword, api_key)
 print('\n the retrieved url list from Springer:')
