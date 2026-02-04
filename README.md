@@ -10,7 +10,7 @@ Each module follows the same architecture:
 
 ## **Notebook Structure**
 
-The notebook is organized into **five main modules**, each addressing a specific step in the information extraction process:
+The notebook is organized into **five main modules**:
 
 1. **Entity Extraction**  
    Extract textual spans that represent a specific type of entity. In this workflow implementation we extract three types of entities: reserarch METHOD, research ACTIVITY and research GOAL as defined in Scholarly Ontology. 
