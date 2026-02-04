@@ -19,7 +19,7 @@ The notebook is organized into **five main modules**:
    Resolve ambiguities among entities with similar or identical surface forms. In this workflow implementation we dissambiguate the extracted METHOD names by employing the **[GENRE](https://github.com/facebookresearch/GENRE)** system ([De Cao et. al, 2021](https://arxiv.org/abs/2010.00904)) for Wikipedia-based disambiguation, as provided and further enhanced by the **[Zshot](https://github.com/IBM/zshot)** framework ([Picco et al., 2023](https://aclanthology.org/2023.acl-demo.34/)).
 
 3. **Entity Linking**  
-   Link extracted extracted entities. In this workflow implementation we link METHOD entities to canonical identifiers in Wikipedia, Wikidata and authors' metadata using the ORCID API.
+   Link extracted entities. In this workflow implementation we link METHOD entities to canonical identifiers in Wikipedia, Wikidata and authors' metadata using the ORCID API.
 
 4. **Relation Extraction**  
    Detect and classify semantic relationships between entities. In this workflow implementation, we create the `employs(Activity,Method)` and the `hasObjective(Activity,Goal)` relationship.
