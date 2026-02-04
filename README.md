@@ -8,6 +8,26 @@ Each module follows the same architecture:
 3. The third cell is used for calling the module's functions. 
 4. There is an optional 4th cell for visualizing the module's output when possible.
 
+## **Notebook Structure**
+
+The notebook is organized into **five main modules**, each addressing a specific step in the information extraction process:
+
+1. **Entity Extraction**  
+   Extract textual spans that represent a specific type of entity. In this workflow implementation we extract three types of entities: reserarch METHOD, research ACTIVITY and research GOAL as defined in Scholarly Ontology. 
+
+2. **Entity Disambiguation**  
+   Resolve ambiguities among entities with similar or identical surface forms. In this workflow implementation we dissambiguate the extracted METHOD names by employing the **[GENRE](https://github.com/facebookresearch/GENRE)** system ([De Cao et. al, 2021](https://arxiv.org/abs/2010.00904)) for Wikipedia-based disambiguation, as provided and further enhanced by the **[Zshot](https://github.com/IBM/zshot)** framework ([Picco et al., 2023](https://aclanthology.org/2023.acl-demo.34/)).
+
+3. **Entity Linking**  
+   Link extracted extracted entities. In this workflow implementation we link METHOD entities to canonical identifiers in Wikipedia, Wikidata and authors' metadata using the ORCID API.
+
+4. **Relation Extraction**  
+   Detect and classify semantic relationships between entities. In this workflow implementation, we create the `employs(Activity,Method)` and the `hasObjective(Activity,Goal)` relationship.
+
+5. **RDF Generation**  
+   Generate RDF triples based on linked data standards for the Semantic Web.
+
+
 This repository was created specifically for educational purposes. 
 
 For further information please read (and cite) the following references:
