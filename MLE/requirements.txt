@@ -1,0 +1,11 @@
+information-linking-queries
+spacy[transformers]
+SPARQLWrapper
+srsly
+zshot==0.0.11
+gliner==0.2.21
+rdflib
+en_core_web_sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl#sha256=1932429db727d4bff3deed6b34cfc05df17794f4a52eeb26cf8928f7c1a0fb85
+en_deberta_v3_base_ner_method @ https://huggingface.co/NikosKprl/en_deberta_v3_base_ner_method/resolve/main/en_deberta_v3_base_ner_method-0.1.0-py3-none-any.whl
+en_deberta_v3_base_ner_goal @ https://huggingface.co/NikosKprl/en_deberta_v3_base_ner_goal/resolve/main/en_deberta_v3_base_ner_goal-0.1.0-py3-none-any.whl
+en_deberta_v3_base_ner_activity @ https://huggingface.co/NikosKprl/en_deberta_v3_base_ner_activity/resolve/main/en_deberta_v3_base_ner_activity-0.1.0-py3-none-any.whl
