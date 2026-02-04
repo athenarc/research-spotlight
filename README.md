@@ -8,7 +8,7 @@ Each module follows the same architecture:
 3. The third cell is used for calling the module's functions. 
 4. There is an optional 4th cell for visualizing the module's output when possible.
 
-## **Notebook Structure**
+## **Workflow Architecture**
 
 The notebook is organized into **five main modules**:
 
