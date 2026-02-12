@@ -1,6 +1,6 @@
 # Research Spotlight
 
-Research Spotlight (RS) provides an automated workflow that allows for transforming text from research publications into scholarly knowledge graphs. The entire process is ontology driven, meaning that the types of entities and relations to be created are defined in Scholarly Ontology, a CIDOC-CRM compatible conceptual framework, specifically designed for documenting scholarly work. Along this line, for the population of Scholarly Ontology's core entities and relations, Research Spotlight provides a series of interconnected modules, each dealing with a specific step of the workflow. It employs a modular architecture that allows for flexible expansion and upgrade of its various components and is writen in Python as a jupiter notebook.
+Research Spotlight (RS) provides an automated workflow that allows for transforming text from research publications into scholarly knowledge graphs. The entire process is ontology driven, meaning that the types of entities and relations to be created are defined in Scholarly Ontology, a [CIDOC-CRM](https://cidoc-crm.org/) compatible conceptual framework, specifically designed for documenting scholarly work. Along this line, for the population of Scholarly Ontology's core entities and relations, Research Spotlight provides a series of interconnected modules, each dealing with a specific step of the workflow. It employs a modular architecture that allows for flexible expansion and upgrade of its various components and is writen in Python as a jupiter notebook.
 
 Each module follows the same architecture:
 1. The first cell is used for initialisation of paths and python libraries that are called from the module's functions.
@@ -19,7 +19,7 @@ The notebook is organized into **five main modules**:
    Resolve ambiguities among entities with similar or identical surface forms. In this workflow implementation we dissambiguate the extracted METHOD names by employing the **[GENRE](https://github.com/facebookresearch/GENRE)** system ([De Cao et. al, 2021](https://arxiv.org/abs/2010.00904)) for Wikipedia-based disambiguation.
 
 3. **Entity Linking**  
-   Link extracted entities. In this workflow implementation we link METHOD entities to canonical identifiers in Wikipedia, Wikidata and authors' metadata using the ORCID API.
+   Link extracted entities. In this workflow implementation we link METHOD entities to canonical identifiers in Wikipedia, Wikidata and authors' metadata using the [ORCID](https://orcid.org/) API.
 
 4. **Relation Extraction**  
    Detect and classify semantic relationships between entities. In this workflow implementation, we create the `employs(Activity,Method)` and the `hasObjective(Activity,Goal)` relationship.
