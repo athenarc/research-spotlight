@@ -32,11 +32,11 @@ This repository was created specifically for educational purposes.
 
 For further information please read (and cite) the following references:
 
-1) Ontology-Driven Extraction of Contextualized Information from Research Publications. V. Pertsas, P. Constantopoulos. International Conference on Knowledge Engineering and Ontology Development (KEOD). Rome. (2023). 
-2) A Knowledge Graph for Humanities Research. V. Pertsas, M. Kasapaki, P. Leondaridis, P. Constantopoulos. Digital Humanitites (DH2023). Graz. 2023
-3) From Research Articles to Knowledge Graphs. Pertsas, Constantopoulos. The World Wide Web Conference (WWW). San Francisco. 2019
-4) Ontology Driven Extraction of Research Processes. Pertsas, Constantopoulos, Androutsopoulos. International Semantic Web Conference (ISWC). Monterey. 2018
-5) Ontology-Driven Information Extraction from Research Publications. Pertsas, Constantopoulos. International Conference on Transactions of Digital Libraries. Porto. 2018
-6) Scholarly Ontology: modelling scholarly practices, Pertsas, Constantopoulos, IJDL, 2016, DOI: 10.1007/s00799-016-0169-3
+1) Pertsas, V. & Constantopoulos, P. (2023). **Ontology-Driven Extraction of Contextualized Information from Research Publications**. In *Proceedings of the 15th International Joint Conference on Knowledge Discovery, Knowledge Engineering and Knowledge Management - KEOD*; ISBN 978-989-758-671-2; ISSN 2184-3228, SciTePress, 108-118. DOI: [10.5220/0012254100003598](https://www.scitepress.org/Link.aspx?doi=10.5220/0012254100003598).
+2) Pertsas, V., Kasapaki, M., Leondaridis, P., & Constantopoulos, P. (2023). **A Knowledge Graph for Humanities Research**. *Digital Humanitites (DH2023)*. Graz. DOI: [10.5281/zenodo.8107679](10.5281/zenodo.8107679).
+3) Pertsas, V., & Constantopoulos, P. (2019). **From Research Articles to Knowledge Graphs**. In *Companion Proceedings of The 2019 World Wide Web Conference (WWW '19)*. Association for Computing Machinery, New York, NY, USA, 1313–1315. DOI: [10.1145/3308560.3320090](https://doi.org/10.1145/3308560.3320090).
+4) Pertsas, V, Constantopoulos, P., & Androutsopoulos, I. (2018). **Ontology Driven Extraction of Research Processes**. In *The Semantic Web – ISWC 2018: 17th International Semantic Web Conference, Monterey, CA, USA, October 8–12, 2018, Proceedings, Part I*. Springer-Verlag, Berlin, Heidelberg, 162–178. DOI: [10.1007/978-3-030-00671-6_10](https://doi.org/10.1007/978-3-030-00671-6_10).
+5) Pertsas, V., & Constantopoulos, P. (2018). **Ontology-Driven Information Extraction from Research Publications**. In: Méndez, E., Crestani, F., Ribeiro, C., David, G., Lopes, J. (eds) Digital Libraries for Open Knowledge. *International Conference on Theory and Practice of Digital Libraries (TPDL)*. Lecture Notes in Computer Science(), vol 11057. Springer, Cham. DOI: [10.1007/978-3-030-00066-0_21](https://doi.org/10.1007/978-3-030-00066-0_21).
+6) Pertsas, V., & Constantopoulos, P. (2017). **Scholarly Ontology: modelling scholarly practices**. *Int J Digit Libr* 18, 3, 173–190. DOI: [10.1007/s00799-016-0169-3](https://doi.org/10.1007/s00799-016-0169-3).
 
 
