@@ -16,7 +16,7 @@ The notebook is organized into **five main modules**:
    Extract textual spans that represent a specific type of entity. In this workflow implementation we extract three types of entities: reserarch METHOD, research ACTIVITY and research GOAL as defined in Scholarly Ontology. 
 
 2. **Entity Disambiguation**  
-   Resolve ambiguities among entities with similar or identical surface forms. In this workflow implementation we dissambiguate the extracted METHOD names by employing the **[GENRE](https://github.com/facebookresearch/GENRE)** system ([De Cao et. al, 2021](https://arxiv.org/abs/2010.00904)) for Wikipedia-based disambiguation, as provided and further enhanced by the **[Zshot](https://github.com/IBM/zshot)** framework ([Picco et al., 2023](https://aclanthology.org/2023.acl-demo.34/)).
+   Resolve ambiguities among entities with similar or identical surface forms. In this workflow implementation we dissambiguate the extracted METHOD names by employing the **[GENRE](https://github.com/facebookresearch/GENRE)** system ([De Cao et. al, 2021](https://arxiv.org/abs/2010.00904)) for Wikipedia-based disambiguation.
 
 3. **Entity Linking**  
    Link extracted entities. In this workflow implementation we link METHOD entities to canonical identifiers in Wikipedia, Wikidata and authors' metadata using the ORCID API.
