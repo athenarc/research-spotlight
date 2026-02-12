@@ -8,7 +8,7 @@ Each module follows the same architecture:
 3. The third cell is used for calling the module's functions. 
 4. There is an optional 4th cell for visualizing the module's output when possible.
 
-## **Workflow Architecture**
+## ⚙️ Workflow Architecture
 
 The notebook is organized into **five main modules**:
 
@@ -28,8 +28,10 @@ The notebook is organized into **five main modules**:
    Generate RDF triples based on linked data standards for the Semantic Web.
 
 
-This repository was created specifically for educational purposes. 
+This repository was created specifically for educational purposes.
 
+
+## 📚 Citation
 For further information please read (and cite) the following references:
 
 1) Pertsas, V. & Constantopoulos, P. (2023). **Ontology-Driven Extraction of Contextualized Information from Research Publications**. In *Proceedings of the 15th International Joint Conference on Knowledge Discovery, Knowledge Engineering and Knowledge Management - KEOD*; ISBN 978-989-758-671-2; ISSN 2184-3228, SciTePress, 108-118. DOI: [10.5220/0012254100003598](https://www.scitepress.org/Link.aspx?doi=10.5220/0012254100003598).
