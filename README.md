@@ -6,7 +6,6 @@ Each module follows the same architecture:
 1. The first cell is used for initialisation of paths and python libraries that are called from the module's functions.
 2. The second cell is used for declaring the module's functions.
 3. The third cell is used for calling the module's functions. 
-4. There is an optional 4th cell for visualizing the module's output when possible.
 
 ## ⚙️ Workflow Architecture
 
