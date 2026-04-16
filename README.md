@@ -1,5 +1,7 @@
 # Research Spotlight
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/athenarc/research-spotlight/blob/main/MLE/code/ResearchSpotlightDemo.ipynb)
+
 Research Spotlight (RS) provides an automated workflow that allows for transforming text from research publications into scholarly knowledge graphs. The entire process is ontology driven, meaning that the types of entities and relations to be created are defined in [Scholarly Ontology](https://scholarlyontology.aueb.gr/?page_id=32), a [CIDOC-CRM](https://cidoc-crm.org/) compatible conceptual framework, specifically designed for documenting scholarly work. Along this line, for the population of Scholarly Ontology's core entities and relations, Research Spotlight provides a series of interconnected modules, each dealing with a specific step of the workflow. It employs a modular architecture that allows for flexible expansion and upgrade of its various components and is writen in Python as a jupiter notebook.
 
 Each module follows the same architecture:
