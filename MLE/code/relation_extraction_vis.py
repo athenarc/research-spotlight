@@ -48,7 +48,7 @@ def build_mock(text):
     tokens = []
     cursor = 0
     for word in words:
-        start = text.find(word, cursor)
+        start = text[0].find(word, cursor)
         end = start + len(word) - 1
         tokens.append(Annotation("token", start, end, word, {}, None))
         cursor = end + 1
