@@ -4,6 +4,7 @@ import ipywidgets as widgets
 from IPython.display import display
 
 index = 0
+examples = []
 
 output = widgets.Output()
 btn_next = widgets.Button(description="→")
@@ -12,36 +13,62 @@ btn_first = widgets.Button(description="↺")
 
 vis = RelationExtractionVisualizer()
 
+
+def render(data=None):
+    global index, examples
+
+    if data is not None:
+        examples = data
+        index = 0
+
+    output.clear_output()
+
+    if not examples:
+        return
+
+    text = examples[index]
+
+    result = build_mock(text)
+
+    with output:
+        vis.display(
+            result,
+            relation_col="relations",
+            document_col="document",
+            show_relations=True
+        )
+        print(f"{index + 1} / {len(examples)}")
+
+
 def build_mock(text):
     words = text.split()
-    
-    # Build DOCUMENT
-    document = [Annotation("DOCUMENT", 0, len(text) - 1, text, {}, None)]
-    
-    # Build TOKENS with char offsets
+
+    document = [Annotation("DOCUMENT", 0, len(text[0]) - 1, text[0], {}, None)]
+
     tokens = []
     cursor = 0
-    for w in words:
-        start = text.find(w, cursor)
-        end = start + len(w) - 1
-        tokens.append(Annotation("TOKEN", start, end, w, {}, None))
+    for word in words:
+        start = text.find(word, cursor)
+        end = start + len(word) - 1
+        tokens.append(Annotation("token", start, end, word, {}, None))
         cursor = end + 1
 
-    # Assume simple relation: first word -> last word
     relations = [
         Annotation(
             "RELATION",
-            0, len(text) - 1,
-            "love",
+            0,
+            len(text[0]) - 1,
+            text[1],
             {
-                "entity1": "Person",
-                "entity1_begin": str(tokens[0].begin),
-                "entity1_end": str(tokens[0].end),
-                "chunk1": tokens[0].result,
-                "entity2": "Object",
-                "entity2_begin": str(tokens[-1].begin),
-                "entity2_end": str(tokens[-1].end),
-                "chunk2": tokens[-1].result
+                "entity1": text[2][2],
+                "entity1_begin": text[2][0],
+                "entity1_end": text[2][1],
+                "chunk1": text[0][text[2][0]:text[2][1]],
+
+                "entity2": text[3][2],
+                "entity2_begin": text[3][0],
+                "entity2_end": text[3][1],
+                "chunk2": text[0][text[3][0]:text[3][1]],
             },
             None
         )
@@ -49,22 +76,15 @@ def build_mock(text):
 
     return {
         "document": document,
-        "tokens": tokens,
+        "tokens": [],
         "relations": relations
     }
 
-def render(examples):
-    output.clear_output()
-    mock_result = build_mock(examples[index])
 
-    with output:
-        vis.display(
-            mock_result,
-            relation_col='relations',
-            document_col='document',
-            show_relations=True
-        )
-        print(f"{index+1} / {len(examples)}")
+def first_click(b):
+    global index
+    index = 0
+    render()
 
 
 def next_click(b):
