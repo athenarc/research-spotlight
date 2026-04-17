@@ -41,7 +41,7 @@ def render(data=None):
 
 
 def build_mock(text):
-    words = text.split()
+    words = text[0].split()
 
     document = [Annotation("DOCUMENT", 0, len(text[0]) - 1, text[0], {}, None)]
 
