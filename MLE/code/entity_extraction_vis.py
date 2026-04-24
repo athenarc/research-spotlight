@@ -10,7 +10,6 @@ btn_next = widgets.Button(description="→")
 btn_prev = widgets.Button(description="←")
 btn_first = widgets.Button(description="↺")
 
-
 def render(data=None):
     global index, examples
 
@@ -24,10 +23,10 @@ def render(data=None):
 
     item = examples[index]
 
-    options = {"colors":{"METHOD":"#7aecec"}}
+    options = {"colors":{"METHOD":"#7aecec","ACTIVITY":"#45de2a","GOAL":"#e66225"}}
 
     with output:
-        displacy.render([item], style="ent", options=options, jupyter= True, page=False, manual=True)
+        displacy.render([item], style="span", options=options, jupyter=True, page=False, manual=True)
         print(f"{index+1} / {len(examples)}")
 
 def first_click(b):

@@ -13,7 +13,6 @@ btn_first = widgets.Button(description="↺")
 
 vis = RelationExtractionVisualizer()
 
-
 def render(data=None):
     global index, examples
 
@@ -38,7 +37,6 @@ def render(data=None):
             show_relations=True
         )
         print(f"{index + 1} / {len(examples)}")
-
 
 def build_mock(text):
     words = text[0].split()
@@ -80,18 +78,15 @@ def build_mock(text):
         "relations": relations
     }
 
-
 def first_click(b):
     global index
     index = 0
     render()
 
-
 def next_click(b):
     global index
     index = (index + 1) % len(examples)
     render()
-
 
 def prev_click(b):
     global index
