@@ -2,6 +2,7 @@ information-linking-queries
 spacy[transformers]
 SPARQLWrapper
 srsly
+pyspark
 zshot==0.0.11
 gliner==0.2.21
 rdflib
