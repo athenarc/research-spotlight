@@ -1,6 +1,7 @@
 information-linking-queries
 spacy-transformers @ git+https://github.com/explosion/spacy-transformers.git@master
 SPARQLWrapper
+wget
 glmocr[selfhosted]
 wtpsplit
 srsly
