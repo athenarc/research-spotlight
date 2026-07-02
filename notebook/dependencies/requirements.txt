@@ -2,6 +2,8 @@ information-linking-queries
 SPARQLWrapper
 spacy-transformers
 ipywidgets
+notebook
+widgetsnbextension
 wget
 wtpsplit
 srsly
