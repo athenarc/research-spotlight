@@ -1,5 +1,5 @@
 information-linking-queries
-spacy-transformers @ git+https://github.com/explosion/spacy-transformers.git@master
+spacy-transformers @ git+https://github.com/explosion/spacy-transformers.git@master --no-deps
 SPARQLWrapper
 wget
 glmocr[selfhosted]
