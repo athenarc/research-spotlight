@@ -1,5 +1,6 @@
 information-linking-queries
 SPARQLWrapper
+spacy
 ipywidgets
 notebook
 widgetsnbextension
