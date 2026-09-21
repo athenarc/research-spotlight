@@ -12,3 +12,5 @@ pyspark
 rdflib
 sparknlp
 spark-nlp-display
+pillow
+vllm==0.22.1
