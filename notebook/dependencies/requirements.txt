@@ -1,6 +1,7 @@
 information-linking-queries
 SPARQLWrapper
 spacy
+git+https://github.com/explosion/spacy-transformers.git
 ipywidgets
 notebook
 widgetsnbextension
