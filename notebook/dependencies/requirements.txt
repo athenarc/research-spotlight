@@ -12,8 +12,5 @@ pyspark
 rdflib
 sparknlp
 spark-nlp-display
-pillow
 pymupdf
-transformers
-torch
-torchvision
+paddleocr[doc-parser]>=3.6.0
