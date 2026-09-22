@@ -12,5 +12,3 @@ pyspark
 rdflib
 sparknlp
 spark-nlp-display
-pymupdf
-paddleocr[doc-parser]>=3.6.0
