@@ -155,12 +155,6 @@ To stop the application:
 Ctrl+C
 ```
 
-You can also start it in the background:
-
-```bash
-docker compose up -d
-```
-
 To stop the background containers:
 
 ```bash
@@ -191,12 +185,6 @@ Start the application:
 docker compose up
 ```
 
-Or run it in the background:
-
-```bash
-docker compose up -d
-```
-
 To stop it:
 
 ```bash
@@ -214,6 +202,7 @@ Use the the following URL to access the Web UI:
 ```text
 http://localhost:8000
 ```
+The results of a run are inside the `data` folder.
 
 ---
 
