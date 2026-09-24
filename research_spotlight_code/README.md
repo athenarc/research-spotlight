@@ -43,7 +43,7 @@ GLM-OCR is run locally through `llama.cpp`.
 Start the server with:
 
 ```bash
-llama-server -hf ggml-org/GLM-OCR-GGUF:F16 --port 8080
+llama-server -hf ggml-org/GLM-OCR-GGUF:Q8_0 --port 8080
 ```
 
 The first time you run this command, `llama.cpp` will download the GLM-OCR model from Hugging Face.
