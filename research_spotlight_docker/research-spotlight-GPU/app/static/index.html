@@ -1,0 +1,399 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  />
+
+  <title>Research Spotlight</title>
+
+  <link
+    rel="stylesheet"
+    href="/static/styles.css"
+  />
+</head>
+
+<body>
+  <div class="app-shell">
+
+    <!-- ======================================================
+         SIDEBAR
+         ====================================================== -->
+
+    <aside class="sidebar">
+      <div class="brand">
+        <div>
+          <strong>Research Spotlight</strong>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="eyebrow">WORKFLOW</div>
+
+        <div
+          id="stepList"
+          class="step-list"
+        ></div>
+      </div>
+    </aside>
+
+
+    <!-- ======================================================
+         MAIN CONTENT
+         ====================================================== -->
+
+    <main class="main">
+
+      <!-- TOP BAR -->
+
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">RESEARCH SPOTLIGHT PIPELINE</div>
+
+          <h1>
+            Transform research publications into a scholarly knowledge graph.
+          </h1>
+        </div>
+
+        <button
+          id="themeToggle"
+          class="theme-toggle"
+          type="button"
+          title="Switch theme"
+          aria-label="Switch theme"
+        >
+          <span
+            id="themeIcon"
+            aria-hidden="true"
+          >☀</span>
+        </button>
+      </header>
+
+
+      <!-- ====================================================
+           WORKSPACE
+           ==================================================== -->
+
+      <section
+        id="workspace"
+        class="workspace"
+      >
+
+        <!-- ==================================================
+             START / UPLOAD VIEW
+             ================================================== -->
+
+        <div
+          id="startView"
+          class="hero-card"
+        >
+
+          <div class="hero-copy">
+
+            <div class="hero-badge">
+              PDF → entities → relations → RDF
+            </div>
+
+            <h2>
+              Upload a paper set and walk through the pipeline.
+            </h2>
+
+            <p>
+              Each stage is explicit. The output is saved before
+              the next stage becomes available.
+            </p>
+
+          </div>
+
+
+          <!-- UPLOAD FORM -->
+
+          <form
+            id="uploadForm"
+            class="upload-panel"
+          >
+
+            <!-- PDF DROPZONE -->
+
+            <label
+              class="dropzone"
+              id="dropzone"
+            >
+
+              <input
+                id="pdfInput"
+                name="pdfs"
+                type="file"
+                accept="application/pdf,.pdf"
+                multiple
+                required
+              />
+
+              <div class="upload-icon">
+                ↑
+              </div>
+
+              <strong>
+                Drop your PDFs here
+              </strong>
+
+              <span>
+                or click to choose multiple files
+              </span>
+
+              <div
+                id="fileList"
+                class="file-list"
+              ></div>
+
+            </label>
+
+
+            <!-- METADATA -->
+
+            <label class="metadata-upload">
+
+              <span>
+                Required metadata.jsonl
+              </span>
+
+              <input
+                id="metadataInput"
+                name="metadata"
+                type="file"
+                accept="application/json,.jsonl,.txt"
+                required
+              />
+
+            </label>
+
+
+            <!-- VALIDATION MESSAGE -->
+
+            <div
+              id="uploadValidation"
+              class="upload-validation"
+              role="alert"
+              aria-live="polite"
+            ></div>
+
+
+            <!-- CREATE RUN -->
+
+            <button
+              class="primary-btn"
+              id="createRunBtn"
+              type="submit"
+            >
+              Create run
+              <span>→</span>
+            </button>
+
+          </form>
+        </div>
+
+
+        <!-- ==================================================
+             PIPELINE STAGE VIEW
+             ================================================== -->
+
+        <div
+          id="stageView"
+          class="stage-card hidden"
+        >
+
+          <!-- STAGE HEADER -->
+
+          <div class="stage-head">
+
+            <div>
+
+              <div
+                id="stageKicker"
+                class="eyebrow"
+              ></div>
+
+              <h2 id="stageTitle"></h2>
+
+              <p id="stageDescription"></p>
+
+            </div>
+
+
+            <div class="stage-head-right">
+
+              <div
+                id="stageNumber"
+                class="stage-number"
+              ></div>
+
+            </div>
+
+          </div>
+
+
+          <!-- STAGE STATS -->
+
+          <div
+            id="stageStats"
+            class="stats-grid"
+          ></div>
+
+
+          <!-- EXECUTION -->
+
+          <div class="execution-card">
+
+            <div class="execution-line">
+
+              <span id="stageStateLabel">
+                Ready to run
+              </span>
+
+              <!-- Kept because app.js currently references it -->
+              <span id="stageArtifactLabel">
+                Waiting for output
+              </span>
+
+            </div>
+
+
+            <!-- TIMER -->
+
+            <div class="time-line">
+
+              <span class="time-label">
+                Elapsed
+              </span>
+
+              <strong id="stageTimer">
+                00:00
+              </strong>
+
+            </div>
+
+
+            <!-- PROGRESS -->
+
+            <div class="progress-track">
+
+              <div
+                id="stageProgress"
+                class="progress-fill"
+              ></div>
+
+            </div>
+
+
+            <!-- LOG -->
+
+            <div
+              id="stageLog"
+              class="stage-log"
+              aria-live="polite"
+            >
+              Click
+              <strong>Run module</strong>
+              to start this stage.
+            </div>
+
+          </div>
+
+
+          <!-- ==================================================
+               FINAL TOTAL TIME
+               ================================================== -->
+
+          <div
+            id="totalTimeCard"
+            class="total-time-card hidden"
+          >
+
+            <div>
+
+              <div class="eyebrow">
+                PIPELINE COMPLETE
+              </div>
+
+              <strong id="totalTimeValue">
+                00:00
+              </strong>
+
+              <span>
+                Total time across all modules
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <!-- ==================================================
+               STAGE PREVIEW / VISUALIZATION
+               ================================================== -->
+
+          <div
+            id="preview"
+            class="preview-card hidden"
+          ></div>
+
+
+          <!-- ==================================================
+               STAGE ACTIONS
+               ================================================== -->
+
+          <div class="stage-actions">
+
+            <div class="action-right">
+
+              <button
+                class="primary-btn"
+                id="runBtn"
+                type="button"
+              >
+                Run module
+                <span>▶</span>
+              </button>
+
+
+              <button
+                class="primary-btn hidden"
+                id="nextBtn"
+                type="button"
+              >
+                Save &amp; next
+                <span>→</span>
+              </button>
+
+
+              <button
+                class="primary-btn hidden"
+                id="resetBtn"
+                type="button"
+              >
+                Reset
+                <span>↻</span>
+              </button>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+
+  <!-- ======================================================
+       APPLICATION JAVASCRIPT
+       ====================================================== -->
+
+  <script src="/static/app.js"></script>
+
+</body>
+</html>

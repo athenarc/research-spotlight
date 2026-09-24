@@ -1,0 +1,2168 @@
+:root {
+  --bg: #070811;
+  --bg-glow: #121832;
+
+  --panel: #101426;
+  --panel-2: #0c1020;
+  --panel-3: #0f1529;
+
+  --line: #242b47;
+  --line-strong: #303a5c;
+
+  --text: #f5f5ff;
+  --muted: #9ca6c1;
+  --muted-2: #6f7895;
+
+  --accent: #8b5cf6;
+  --accent-2: #5b21b6;
+  --accent-soft: rgba(139, 92, 246, .13);
+
+  --success: #62d7bb;
+  --danger: #ff6d7a;
+
+  --shadow:
+    0 24px 70px rgba(0, 0, 0, .28);
+}
+
+html[data-theme="light"] {
+  --bg: #fffaf5;
+  --bg-glow: #fff2e3;
+
+  --panel: #ffffff;
+  --panel-2: #fffaf6;
+  --panel-3: #fffdfb;
+
+  --line: #eadfd5;
+  --line-strong: #dec8b9;
+
+  --text: #24170e;
+  --muted: #76685e;
+  --muted-2: #9a8a7e;
+
+  --accent: #f97316;
+  --accent-2: #ea580c;
+  --accent-soft: rgba(249, 115, 22, .11);
+
+  --success: #18866d;
+  --danger: #d9485f;
+
+  --shadow:
+    0 24px 70px rgba(93, 57, 31, .10);
+}
+
+
+/* ============================================================
+   GLOBAL
+   ============================================================ */
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+
+  color: var(--text);
+
+  background:
+    radial-gradient(
+      circle at top right,
+      var(--bg-glow) 0,
+      var(--bg) 46%
+    );
+
+  min-height: 100vh;
+
+  transition:
+    background .2s ease,
+    color .2s ease;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+
+/* ============================================================
+   APP LAYOUT
+   ============================================================ */
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  min-height: 100vh;
+}
+
+
+/* ============================================================
+   SIDEBAR
+   ============================================================ */
+
+.sidebar {
+  border-right: 1px solid var(--line);
+
+  background:
+    color-mix(
+      in srgb,
+      var(--panel-2) 92%,
+      transparent
+    );
+
+  backdrop-filter: blur(18px);
+
+  padding: 26px 20px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/*
+ * Kept for compatibility in case the brand mark
+ * is added back later.
+ */
+.brand-mark {
+  width: 42px;
+  height: 42px;
+
+  border-radius: 14px;
+
+  display: grid;
+  place-items: center;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent),
+      var(--accent-2)
+    );
+
+  color: #fff;
+  font-weight: 800;
+
+  box-shadow:
+    0 8px 30px
+    color-mix(
+      in srgb,
+      var(--accent) 24%,
+      transparent
+    );
+}
+
+.brand strong,
+.brand span {
+  display: block;
+}
+
+.brand span {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.sidebar-section {
+  margin-top: 38px;
+}
+
+.eyebrow {
+  font-size: 11px;
+  letter-spacing: .14em;
+  color: var(--muted-2);
+  font-weight: 700;
+}
+
+
+/* ============================================================
+   SIDEBAR MODULE LIST
+   ============================================================ */
+
+.step-list {
+  margin-top: 14px;
+
+  display: grid;
+  gap: 8px;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 34px 1fr auto;
+
+  gap: 10px;
+  align-items: center;
+
+  padding: 11px 10px;
+
+  border: 1px solid transparent;
+  border-radius: 15px;
+
+  color: var(--muted);
+
+  transition:
+    background .2s ease,
+    border .2s ease,
+    color .2s ease,
+    opacity .2s ease;
+}
+
+.step.active {
+  background: var(--accent-soft);
+
+  border-color:
+    color-mix(
+      in srgb,
+      var(--accent) 34%,
+      var(--line)
+    );
+
+  color: var(--text);
+}
+
+.step.done .step-index {
+  background:
+    color-mix(
+      in srgb,
+      var(--success) 15%,
+      transparent
+    );
+
+  color: var(--success);
+}
+
+.step.locked {
+  opacity: .45;
+}
+
+.step.historical {
+  opacity: .8;
+}
+
+.step-index {
+  width: 30px;
+  height: 30px;
+
+  border-radius: 11px;
+
+  background:
+    color-mix(
+      in srgb,
+      var(--line) 56%,
+      transparent
+    );
+
+  display: grid;
+  place-items: center;
+
+  font-size: 12px;
+}
+
+.step-title {
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.step-sub {
+  font-size: 11px;
+  margin-top: 2px;
+  color: var(--muted-2);
+}
+
+.check {
+  color: var(--success);
+  font-size: 12px;
+}
+
+.step.clickable {
+  cursor: pointer;
+}
+
+.step.clickable:hover {
+  background:
+    color-mix(
+      in srgb,
+      var(--accent) 7%,
+      transparent
+    );
+}
+
+.step.clickable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+
+/* ============================================================
+   LOCKED SIDEBAR WHILE RUNNING
+   ============================================================ */
+
+.step-list.navigation-locked .step {
+  pointer-events: none;
+  cursor: default;
+}
+
+.step-list.navigation-locked .step:not(.active) {
+  opacity: .3;
+}
+
+.step-list.navigation-locked .step.active {
+  opacity: 1;
+}
+
+
+/* ============================================================
+   MAIN AREA
+   ============================================================ */
+
+.main {
+  padding: 34px 44px;
+
+  max-width: 1400px;
+  width: 100%;
+
+  margin: 0 auto;
+}
+
+
+/* ============================================================
+   TOP BAR
+   ============================================================ */
+
+.topbar {
+  display: flex;
+
+  justify-content: space-between;
+  align-items: flex-start;
+
+  gap: 20px;
+}
+
+.topbar h1 {
+  font-size: 34px;
+  line-height: 1.12;
+
+  margin: 7px 0 0;
+
+  max-width: 800px;
+}
+
+
+/* ============================================================
+   THEME TOGGLE
+   ============================================================ */
+
+.theme-toggle {
+  width: 44px;
+  height: 44px;
+
+  border-radius: 14px;
+
+  border: 1px solid var(--line);
+
+  background: var(--panel);
+  color: var(--text);
+
+  display: grid;
+  place-items: center;
+
+  cursor: pointer;
+
+  box-shadow: var(--shadow);
+
+  font-size: 20px;
+
+  transition:
+    transform .2s ease,
+    background .2s ease,
+    border .2s ease;
+}
+
+.theme-toggle:hover {
+  transform: translateY(-1px);
+  border-color: var(--accent);
+}
+
+
+/* ============================================================
+   WORKSPACE
+   ============================================================ */
+
+.workspace {
+  padding: 30px 0;
+}
+
+
+/* ============================================================
+   MAIN CARDS
+   ============================================================ */
+
+.hero-card,
+.stage-card {
+  border: 1px solid var(--line);
+
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(
+        in srgb,
+        var(--panel) 96%,
+        transparent
+      ),
+      var(--panel-2)
+    );
+
+  border-radius: 26px;
+
+  box-shadow: var(--shadow);
+}
+
+
+/* ============================================================
+   HERO / UPLOAD
+   ============================================================ */
+
+.hero-card {
+  display: grid;
+
+  grid-template-columns:
+    1fr 420px;
+
+  gap: 26px;
+
+  padding: 32px;
+}
+
+.hero-badge {
+  display: inline-flex;
+
+  padding: 8px 10px;
+
+  border:
+    1px solid
+    color-mix(
+      in srgb,
+      var(--accent) 30%,
+      var(--line)
+    );
+
+  border-radius: 999px;
+
+  color: var(--accent);
+
+  background:
+    var(--accent-soft);
+
+  font-size: 11px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.hero-copy h2 {
+  font-size: 42px;
+  line-height: 1.06;
+
+  margin: 18px 0 14px;
+
+  max-width: 650px;
+}
+
+.hero-copy p {
+  color: var(--muted);
+
+  font-size: 16px;
+
+  max-width: 620px;
+
+  line-height: 1.7;
+}
+
+
+/* ============================================================
+   UPLOAD PANEL
+   ============================================================ */
+
+.upload-panel {
+  border: 1px solid var(--line);
+  border-radius: 20px;
+
+  padding: 16px;
+
+  background:
+    var(--panel-2);
+}
+
+
+/* ============================================================
+   DROPZONE
+   ============================================================ */
+
+.dropzone {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  min-height: 310px;
+
+  border:
+    1px dashed
+    var(--line-strong);
+
+  border-radius: 17px;
+
+  background:
+    color-mix(
+      in srgb,
+      var(--panel) 85%,
+      transparent
+    );
+
+  cursor: pointer;
+
+  text-align: center;
+
+  padding: 20px;
+
+  transition:
+    border-color .2s ease,
+    background .2s ease,
+    transform .2s ease;
+}
+
+.dropzone:hover {
+  border-color: var(--accent);
+
+  background:
+    var(--accent-soft);
+}
+
+.dropzone.drag-over {
+  border-color: var(--accent);
+
+  background:
+    var(--accent-soft);
+
+  transform: scale(1.01);
+}
+
+.dropzone input {
+  display: none;
+}
+
+.dropzone strong {
+  font-size: 17px;
+}
+
+.dropzone span {
+  font-size: 12px;
+
+  color: var(--muted);
+
+  margin-top: 6px;
+}
+
+
+/* ============================================================
+   UPLOAD ICON
+   ============================================================ */
+
+.upload-icon {
+  width: 54px;
+  height: 54px;
+
+  border-radius: 18px;
+
+  display: grid;
+  place-items: center;
+
+  background:
+    var(--accent-soft);
+
+  font-size: 24px;
+
+  margin-bottom: 16px;
+
+  color: var(--accent);
+}
+
+
+/* ============================================================
+   FILE LIST
+   ============================================================ */
+
+.file-list {
+  margin-top: 16px;
+
+  width: 100%;
+
+  display: grid;
+  gap: 7px;
+
+  max-height: 115px;
+
+  overflow: auto;
+}
+
+.file-chip {
+  padding: 9px 11px;
+
+  border-radius: 12px;
+
+  background:
+    var(--panel-3);
+
+  border:
+    1px solid
+    var(--line);
+
+  color: var(--text);
+
+  font-size: 12px;
+
+  text-align: left;
+}
+
+
+/* ============================================================
+   METADATA UPLOAD
+   ============================================================ */
+
+.metadata-upload {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding: 14px 2px;
+
+  color: var(--muted);
+
+  font-size: 12px;
+
+  align-items: center;
+}
+
+.metadata-upload input {
+  max-width: 195px;
+}
+
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+
+.primary-btn,
+.secondary-btn {
+  border-radius: 14px;
+
+  border:
+    1px solid
+    transparent;
+
+  padding: 13px 16px;
+
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    transform .2s ease,
+    filter .2s ease,
+    opacity .2s ease,
+    background .2s ease,
+    border-color .2s ease,
+    color .2s ease;
+}
+
+.primary-btn {
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent),
+      var(--accent-2)
+    );
+
+  color: #fff;
+
+  box-shadow:
+    0 12px 28px
+    color-mix(
+      in srgb,
+      var(--accent) 18%,
+      transparent
+    );
+}
+
+.primary-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
+.secondary-btn {
+  background:
+    var(--panel-3);
+
+  color: var(--text);
+
+  border-color:
+    var(--line);
+}
+
+.primary-btn:disabled,
+.secondary-btn:disabled {
+  opacity: .45;
+
+  cursor: not-allowed;
+
+  transform: none;
+}
+
+
+/* ============================================================
+   COMPLETED MODULE = DISABLED RUN BUTTON
+   ============================================================ */
+
+.primary-btn.completed-disabled {
+  background:
+    var(--panel-3);
+
+  border-color:
+    var(--line);
+
+  color:
+    var(--muted-2);
+
+  box-shadow: none;
+
+  opacity: .55;
+
+  cursor: not-allowed;
+
+  filter: none;
+}
+
+.primary-btn.completed-disabled:hover {
+  transform: none;
+  filter: none;
+}
+
+
+/* ============================================================
+   STAGE
+   ============================================================ */
+
+.stage-card {
+  padding: 28px;
+}
+
+.stage-head {
+  display: flex;
+
+  justify-content: space-between;
+
+  gap: 20px;
+}
+
+.stage-head h2 {
+  font-size: 32px;
+
+  margin: 8px 0;
+}
+
+.stage-head p {
+  color: var(--muted);
+  margin: 0;
+}
+
+.stage-head-right {
+  display: flex;
+
+  align-items: flex-start;
+}
+
+.stage-number {
+  width: 54px;
+  height: 54px;
+
+  border-radius: 18px;
+
+  display: grid;
+  place-items: center;
+
+  background:
+    var(--panel-3);
+
+  border:
+    1px solid
+    var(--line);
+
+  color: var(--text);
+
+  font-weight: 800;
+}
+
+
+/* ============================================================
+   STATS
+   ============================================================ */
+
+.stats-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 12px;
+
+  margin-top: 24px;
+}
+
+.stat {
+  padding: 16px;
+
+  border:
+    1px solid
+    var(--line);
+
+  border-radius: 16px;
+
+  background:
+    var(--panel-3);
+}
+
+.stat span {
+  display: block;
+
+  color: var(--muted-2);
+
+  font-size: 11px;
+
+  text-transform: uppercase;
+
+  letter-spacing: .1em;
+}
+
+.stat strong {
+  display: block;
+
+  font-size: 22px;
+
+  margin-top: 5px;
+}
+
+
+/* ============================================================
+   EXECUTION / PREVIEW / TOTAL TIME
+   ============================================================ */
+
+.execution-card,
+.preview-card,
+.total-time-card {
+  margin-top: 14px;
+
+  padding: 18px;
+
+  border:
+    1px solid
+    var(--line);
+
+  border-radius: 18px;
+
+  background:
+    var(--panel-2);
+}
+
+.execution-line {
+  display: flex;
+
+  justify-content: space-between;
+
+  color: var(--text);
+
+  font-size: 12px;
+
+  margin-bottom: 10px;
+}
+
+.execution-line span:last-child {
+  color: var(--muted-2);
+}
+
+
+/* ============================================================
+   TIMER
+   ============================================================ */
+
+.time-line {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  margin-bottom: 12px;
+}
+
+.time-label {
+  color: var(--muted-2);
+
+  text-transform: uppercase;
+
+  letter-spacing: .12em;
+
+  font-size: 11px;
+
+  font-weight: 700;
+}
+
+#stageTimer {
+  font-variant-numeric: tabular-nums;
+
+  font-size: 18px;
+
+  color: var(--accent);
+}
+
+
+/* ============================================================
+   PROGRESS BAR
+   ============================================================ */
+
+.progress-track {
+  height: 8px;
+
+  background:
+    color-mix(
+      in srgb,
+      var(--line) 65%,
+      transparent
+    );
+
+  border-radius: 999px;
+
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+
+  width: 0;
+
+  background:
+    linear-gradient(
+      90deg,
+      var(--accent),
+      color-mix(
+        in srgb,
+        var(--accent) 55%,
+        #ffffff
+      )
+    );
+
+  border-radius: 999px;
+
+  transition:
+    width .25s ease;
+}
+
+
+/* ============================================================
+   STAGE LOG
+   ============================================================ */
+
+.stage-log {
+  color: var(--muted);
+
+  font-size: 13px;
+
+  margin-top: 12px;
+
+  line-height: 1.6;
+
+  white-space: pre-wrap;
+
+  max-height: 180px;
+
+  overflow: auto;
+}
+
+
+/* ============================================================
+   TOTAL TIME
+   ============================================================ */
+
+.total-time-card {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  background:
+    linear-gradient(
+      135deg,
+      var(--accent-soft),
+      var(--panel-2)
+    );
+}
+
+.total-time-card strong {
+  display: block;
+
+  font-size: 34px;
+
+  margin: 6px 0 2px;
+
+  font-variant-numeric:
+    tabular-nums;
+
+  color:
+    var(--accent);
+}
+
+.total-time-card span {
+  color:
+    var(--muted);
+
+  font-size: 12px;
+}
+
+
+/* ============================================================
+   PREVIEW
+   ============================================================ */
+
+.preview-card {
+  max-height: 520px;
+  overflow: auto;
+
+  /*
+   * Gives the relation arrows enough room
+   * without changing the normal previews.
+   */
+  scrollbar-gutter: stable;
+}
+
+.preview-title {
+  font-size: 12px;
+
+  text-transform: uppercase;
+
+  letter-spacing: .12em;
+
+  color: var(--muted-2);
+
+  margin-bottom: 10px;
+}
+
+.preview-row {
+  padding: 11px 0;
+
+  border-top:
+    1px solid
+    var(--line);
+
+  font-size: 12px;
+
+  color: var(--text);
+}
+
+.preview-row:first-child {
+  border-top: 0;
+}
+
+
+/* ============================================================
+   STAGE ACTIONS
+   ============================================================ */
+
+.stage-actions {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-top: 20px;
+}
+
+.action-right {
+  display: flex;
+
+  gap: 10px;
+}
+
+
+/* ============================================================
+   VISUALIZATION HEADER
+   ============================================================ */
+
+.visualization-header {
+  display: flex;
+
+  align-items: flex-start;
+
+  justify-content: space-between;
+
+  gap: 20px;
+
+  margin-bottom: 14px;
+}
+
+.visualization-subtitle {
+  margin-top: 5px;
+
+  font-size: 12px;
+
+  color: var(--muted);
+
+  letter-spacing: .08em;
+}
+
+.visualization-counter {
+  font-size: 12px;
+
+  color: var(--muted-2);
+
+  font-variant-numeric:
+    tabular-nums;
+
+  white-space: nowrap;
+}
+
+
+/* ============================================================
+   ENTITY LEGEND
+   ============================================================ */
+
+.entity-legend {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 16px;
+
+  margin-bottom: 18px;
+}
+
+.entity-legend span {
+  display: inline-flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  color: var(--muted);
+
+  font-size: 11px;
+
+  font-weight: 700;
+
+  letter-spacing: .08em;
+}
+
+.legend-dot {
+  width: 9px;
+  height: 9px;
+
+  border-radius: 3px;
+
+  display: inline-block;
+}
+
+.legend-dot.method {
+  background:
+    #7aecec;
+}
+
+.legend-dot.activity {
+  background:
+    #45de2a;
+}
+
+.legend-dot.goal {
+  background:
+    #e66225;
+}
+
+
+/* ============================================================
+   ENTITY / NER VISUALIZATION
+   ============================================================ */
+
+.ner-text {
+  padding:
+    42px 24px 24px;
+
+  min-height: 150px;
+
+  border:
+    1px solid
+    var(--line);
+
+  border-radius: 17px;
+
+  background:
+    var(--panel-3);
+
+  color:
+    var(--text);
+
+  line-height: 2.35;
+
+  font-size: 17px;
+
+  white-space: normal;
+
+  overflow-wrap: anywhere;
+}
+
+
+/* ============================================================
+   ENTITY SPANS
+   ============================================================ */
+
+.entity-span {
+  position: relative;
+
+  display: inline;
+
+  font-weight: 700;
+
+  padding: 2px 1px;
+
+  margin: 0 1px;
+
+  border-bottom:
+    4px solid
+    transparent;
+}
+
+.entity-span .entity-label {
+  display: inline-block;
+
+  position: absolute;
+
+  left: 0;
+
+  bottom:
+    calc(100% + 3px);
+
+  padding: 3px 5px;
+
+  border-radius: 5px;
+
+  line-height: 1;
+
+  font-size: 8px;
+
+  font-weight: 800;
+
+  letter-spacing: .04em;
+
+  color: #071018;
+
+  opacity: .96;
+
+  white-space: nowrap;
+}
+
+
+/* METHOD */
+
+.entity-span.method {
+  border-color:
+    #7aecec;
+
+  background:
+    color-mix(
+      in srgb,
+      #7aecec 13%,
+      transparent
+    );
+}
+
+.entity-span.method .entity-label {
+  background:
+    #7aecec;
+}
+
+
+/* ACTIVITY */
+
+.entity-span.activity {
+  border-color:
+    #45de2a;
+
+  background:
+    color-mix(
+      in srgb,
+      #45de2a 11%,
+      transparent
+    );
+}
+
+.entity-span.activity .entity-label {
+  background:
+    #45de2a;
+}
+
+
+/* GOAL */
+
+.entity-span.goal {
+  border-color:
+    #e66225;
+
+  background:
+    color-mix(
+      in srgb,
+      #e66225 11%,
+      transparent
+    );
+}
+
+.entity-span.goal .entity-label {
+  background:
+    #e66225;
+}
+
+
+/* ============================================================
+   VISUALIZATION CONTROLS
+   ============================================================ */
+
+.visualization-controls {
+  display: flex;
+
+  justify-content: center;
+
+  gap: 8px;
+
+  margin-top: 16px;
+}
+
+.viz-btn {
+  width: 38px;
+  height: 36px;
+
+  border-radius: 11px;
+
+  border:
+    1px solid
+    var(--line);
+
+  background:
+    var(--panel-3);
+
+  color:
+    var(--text);
+
+  cursor:
+    pointer;
+
+  font-weight:
+    800;
+
+  transition:
+    border-color .2s ease,
+    background .2s ease,
+    transform .2s ease,
+    opacity .2s ease;
+}
+
+.viz-btn:hover:not(:disabled) {
+  border-color:
+    var(--accent);
+
+  background:
+    var(--accent-soft);
+
+  transform:
+    translateY(-1px);
+}
+
+.viz-btn:disabled {
+  opacity: .35;
+  cursor: not-allowed;
+}
+
+
+/* ============================================================
+   ENTITY LINKING DETAILS
+   ============================================================ */
+
+.entity-details {
+  margin-top: 12px;
+
+  padding: 16px;
+
+  border:
+    1px solid
+    var(--line);
+
+  border-radius: 15px;
+
+  background:
+    var(--panel-3);
+}
+
+.entity-detail-label {
+  font-size: 10px;
+
+  letter-spacing: .12em;
+
+  color: var(--muted-2);
+
+  font-weight: 800;
+}
+
+.entity-name {
+  margin-top: 5px;
+
+  font-size: 16px;
+
+  font-weight: 750;
+}
+
+.entity-link {
+  display: inline-block;
+
+  margin-top: 9px;
+
+  color:
+    var(--accent);
+
+  text-decoration:
+    none;
+
+  font-size: 12px;
+
+  font-weight: 700;
+}
+
+.entity-link:hover {
+  text-decoration:
+    underline;
+}
+
+.entity-link-disabled {
+  display: inline-block;
+
+  margin-top: 9px;
+
+  color:
+    var(--muted-2);
+
+  font-size: 12px;
+}
+
+
+/* ============================================================
+   EMPTY VISUALIZATION
+   ============================================================ */
+
+.visualization-empty {
+  color:
+    var(--muted);
+
+  padding:
+    22px 0;
+}
+
+
+/* ============================================================
+   METADATA VALIDATION
+   ============================================================ */
+
+#uploadValidation {
+  color:
+    var(--danger);
+
+  font-size:
+    .9rem;
+
+  line-height:
+    1.5;
+
+  margin-top:
+    12px;
+
+  white-space:
+    pre-line;
+}
+
+
+/* ============================================================
+   RELATION EXTRACTION VISUALIZATION
+   ============================================================ */
+
+.relation-visualization {
+  margin-top: 6px;
+}
+
+.relation-header {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: flex-start;
+
+  gap: 20px;
+
+  margin-bottom: 14px;
+}
+
+.relation-type-pill {
+  display: inline-flex;
+
+  align-items: center;
+
+  padding:
+    6px 10px;
+
+  border-radius:
+    999px;
+
+  font-size:
+    10px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    .1em;
+
+  text-transform:
+    uppercase;
+}
+
+.relation-type-pill.employs {
+  color:
+    #071018;
+
+  background:
+    #7aecec;
+}
+
+.relation-type-pill.has-objective {
+  color:
+    #fff;
+
+  background:
+    #e66225;
+}
+
+.relation-type-pill.relation {
+  color:
+    var(--text);
+
+  background:
+    var(--accent-soft);
+
+  border:
+    1px solid
+    var(--line);
+}
+
+.relation-counter {
+  color:
+    var(--muted-2);
+
+  font-size:
+    12px;
+
+  font-variant-numeric:
+    tabular-nums;
+
+  white-space:
+    nowrap;
+}
+
+
+/*
+ * Main relation sentence.
+ *
+ * The large top padding creates the arrow lane.
+ */
+.relation-sentence {
+  position:
+    relative;
+
+  padding:
+    100px 24px 32px;
+
+  min-height:
+    190px;
+
+  border:
+    1px solid
+    var(--line);
+
+  border-radius:
+    18px;
+
+  background:
+    var(--panel-3);
+
+  color:
+    var(--text);
+
+  font-size:
+    17px;
+
+  line-height:
+    2.25;
+
+  white-space:
+    normal;
+
+  overflow-wrap:
+    anywhere;
+
+  isolation:
+    isolate;
+}
+
+
+/*
+ * Actual sentence text.
+ *
+ * The renderer inserts the sentence through textContent as one text
+ * node. Backend offsets remain Python code-point offsets and are
+ * converted to DOM UTF-16 offsets in app.js.
+ */
+.relation-text {
+  position:
+    relative;
+
+  z-index:
+    1;
+
+  white-space:
+    normal;
+
+  overflow-wrap:
+    anywhere;
+}
+
+/*
+ * SVG arrow layer.
+ */
+.relation-svg {
+  position:
+    absolute;
+
+  inset:
+    0;
+
+  width:
+    100%;
+
+  height:
+    100%;
+
+  overflow:
+    visible;
+
+  z-index:
+    3;
+
+  pointer-events:
+    none;
+}
+
+
+/*
+ * Entity highlight overlays.
+ *
+ * These sit behind the sentence text.
+ */
+.relation-highlight {
+  position:
+    absolute;
+
+  border-radius:
+    6px;
+
+  pointer-events:
+    none;
+
+  user-select:
+    none;
+
+  z-index:
+    0;
+
+  box-sizing:
+    border-box;
+}
+
+
+/* DOMAIN = ACTIVITY */
+
+.relation-highlight.domain {
+  border:
+    2px solid
+    #45de2a;
+
+  background:
+    color-mix(
+      in srgb,
+      #45de2a 13%,
+      transparent
+    );
+
+  box-shadow:
+    0 0 0 1px
+    color-mix(
+      in srgb,
+      #45de2a 8%,
+      transparent
+    );
+}
+
+
+/* RANGE = METHOD */
+
+.relation-highlight.range.method {
+  border:
+    2px solid
+    #7aecec;
+
+  background:
+    color-mix(
+      in srgb,
+      #7aecec 13%,
+      transparent
+    );
+
+  box-shadow:
+    0 0 0 1px
+    color-mix(
+      in srgb,
+      #7aecec 8%,
+      transparent
+    );
+}
+
+
+/* RANGE = GOAL */
+
+.relation-highlight.range.goal {
+  border:
+    2px solid
+    #e66225;
+
+  background:
+    color-mix(
+      in srgb,
+      #e66225 13%,
+      transparent
+    );
+
+  box-shadow:
+    0 0 0 1px
+    color-mix(
+      in srgb,
+      #e66225 8%,
+      transparent
+    );
+}
+
+
+/*
+ * Entity label sitting above domain/range.
+ */
+.relation-entity-label {
+  position:
+    absolute;
+
+  left:
+    0;
+
+  top:
+    -17px;
+
+  z-index:
+    2;
+
+  padding:
+    3px 6px;
+
+  border-radius:
+    5px;
+
+  font-size:
+    8px;
+
+  line-height:
+    1;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    .05em;
+
+  white-space:
+    nowrap;
+
+  color:
+    #071018;
+}
+
+.relation-highlight.domain
+.relation-entity-label {
+  background:
+    #45de2a;
+}
+
+.relation-highlight.range.method
+.relation-entity-label {
+  background:
+    #7aecec;
+}
+
+.relation-highlight.range.goal
+.relation-entity-label {
+  color:
+    #fff;
+
+  background:
+    #e66225;
+}
+
+
+/*
+ * Relation label sitting on the curved arrow.
+ */
+.relation-edge-label {
+  position:
+    absolute;
+
+  transform:
+    translate(-50%, -50%);
+
+  z-index:
+    5;
+
+  padding:
+    5px 8px;
+
+  border:
+    1px solid
+    var(--line-strong);
+
+  border-radius:
+    7px;
+
+  background:
+    var(--panel);
+
+  color:
+    var(--text);
+
+  box-shadow:
+    0 6px 18px
+    rgba(0, 0, 0, .18);
+
+  font-size:
+    9px;
+
+  font-weight:
+    800;
+
+  letter-spacing:
+    .07em;
+
+  white-space:
+    nowrap;
+
+  pointer-events:
+    none;
+}
+
+.relation-edge-label.employs {
+  color:
+    #7aecec;
+
+  border-color:
+    color-mix(
+      in srgb,
+      #7aecec 45%,
+      var(--line)
+    );
+}
+
+.relation-edge-label.has-objective {
+  color:
+    #e66225;
+
+  border-color:
+    color-mix(
+      in srgb,
+      #e66225 45%,
+      var(--line)
+    );
+}
+
+.relation-edge-label.relation {
+  color:
+    var(--accent);
+}
+
+
+/*
+ * Empty relation visualization.
+ */
+.relation-empty {
+  padding:
+    28px 4px;
+
+  color:
+    var(--muted);
+
+  text-align:
+    center;
+
+  font-size:
+    13px;
+}
+
+
+/* ============================================================
+   RESPONSIVE
+   ============================================================ */
+
+@media (max-width: 1100px) {
+  .app-shell {
+    grid-template-columns:
+      260px 1fr;
+  }
+
+  .main {
+    padding:
+      28px 28px;
+  }
+
+  .hero-card {
+    grid-template-columns:
+      1fr 380px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .app-shell {
+    grid-template-columns:
+      1fr;
+  }
+
+  .sidebar {
+    display:
+      none;
+  }
+
+  .main {
+    padding:
+      24px 18px;
+  }
+
+  .hero-card {
+    grid-template-columns:
+      1fr;
+  }
+
+  .stats-grid {
+    grid-template-columns:
+      1fr;
+  }
+
+  .topbar h1 {
+    font-size:
+      28px;
+  }
+}
+
+@media (max-width: 600px) {
+  .main {
+    padding:
+      18px 14px;
+  }
+
+  .hero-card,
+  .stage-card {
+    padding:
+      20px;
+  }
+
+  .hero-copy h2 {
+    font-size:
+      32px;
+  }
+
+  .stage-head {
+    flex-direction:
+      column;
+  }
+
+  .stage-head-right {
+    justify-content:
+      flex-end;
+  }
+
+  .stage-actions {
+    flex-direction:
+      column;
+
+    align-items:
+      stretch;
+
+    gap:
+      12px;
+  }
+
+  .action-right {
+    width:
+      100%;
+  }
+
+  .action-right
+  .primary-btn,
+  .action-right
+  .secondary-btn {
+    flex:
+      1;
+  }
+
+  .visualization-header {
+    flex-direction:
+      column;
+  }
+
+  .ner-text {
+    font-size:
+      15px;
+
+    line-height:
+      2.15;
+
+    padding:
+      38px 18px 20px;
+  }
+
+  .metadata-upload {
+    flex-direction:
+      column;
+
+    align-items:
+      flex-start;
+  }
+
+  .metadata-upload input {
+    max-width:
+      100%;
+  }
+
+  .total-time-card {
+    flex-direction:
+      column;
+
+    align-items:
+      flex-start;
+
+    gap:
+      10px;
+  }
+
+  /*
+   * Relation visualization on small screens.
+   */
+  .relation-sentence {
+    padding:
+      92px 16px 26px;
+
+    min-height:
+      175px;
+
+    font-size:
+      15px;
+
+    line-height:
+      2.15;
+  }
+
+  .relation-header {
+    flex-direction:
+      column;
+
+    gap:
+      10px;
+  }
+
+  .relation-counter {
+    margin-top:
+      4px;
+  }
+
+  .relation-edge-label {
+    font-size:
+      8px;
+
+    padding:
+      4px 6px;
+  }
+
+  .relation-entity-label {
+    font-size:
+      7px;
+  }
+}
+
+
+/* ============================================================
+   REDUCED MOTION
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior:
+      auto !important;
+
+    transition:
+      none !important;
+
+    animation:
+      none !important;
+  }
+}

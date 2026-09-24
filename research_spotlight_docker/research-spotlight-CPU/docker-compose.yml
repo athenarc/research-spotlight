@@ -1,0 +1,24 @@
+services:
+  research-spotlight:
+    build: .
+    image: research-spotlight:latest
+
+    ports:
+      - "8000:8000"
+
+    volumes:
+      - ./data:/app/data
+      - research-spotlight-cache:/root/.cache
+      - research-spotlight-hf:/cache/huggingface
+
+    environment:
+      LLAMA_HF_MODEL: ggml-org/GLM-OCR-GGUF:F16
+      LLAMA_HOST: 127.0.0.1
+      LLAMA_PORT: 8080
+
+    restart: unless-stopped
+
+
+volumes:
+  research-spotlight-cache:
+  research-spotlight-hf:
