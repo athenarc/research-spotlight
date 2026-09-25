@@ -98,7 +98,7 @@ git clone https://github.com/athenarc/research-spotlight.git
 Then enter the repository:
 
 ```bash
-cd research_spotlight_code
+cd research-spotlight/research_spotlight_code
 ```
 
 You should see folders similar to:
