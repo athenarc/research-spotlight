@@ -33,7 +33,6 @@ For the GPU version you additionally need:
 
 Install [**Docker Desktop for Mac**](https://docs.docker.com/desktop/setup/install/mac-install/) from the official Docker website:
 
-
 After installation, start Docker Desktop and verify it from a terminal:
 
 ```bash
@@ -208,7 +207,12 @@ The results of a run are inside the `data` folder.
 
 # 7. Additional information
 
-### 🔄 Rebuilding from scratch
+### Input
+
+The input should be PDF(s) renamed as `1.pdf`, `2.pdf`, `3.pdf` alongside the required metadata.
+Check the PDF folder for examples.
+
+### Rebuilding from scratch
 
 If you need to rebuild the containers and images after making substantial changes:
 
@@ -220,7 +224,7 @@ docker compose up
 
 `--no-cache` forces Docker to rebuild the image layers instead of reusing the existing build cache.
 
-### 🧠 Out-of-memory errors
+### Out-of-memory errors
 
 Research Spotlight uses machine-learning models and can require substantial RAM/VRAM.
 
