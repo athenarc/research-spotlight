@@ -146,6 +146,11 @@ Start the application:
 docker compose up
 ```
 
+Go to this URL:
+
+```bash
+http://localhost:8000
+```
 Keep this terminal open while the application is running.
 
 To stop the application:
@@ -182,6 +187,12 @@ Start the application:
 
 ```bash
 docker compose up
+```
+
+Go to this URL:
+
+```bash
+http://localhost:8000
 ```
 
 To stop it:
