@@ -49,7 +49,6 @@ Apple Silicon Macs (for example M1, M2, M3, M4) should use:
 ```text
 research-spotlight-CPU
 ```
-🚧 We plan to add support for Apple Silicon Macs in the future.
 
 ---
 
