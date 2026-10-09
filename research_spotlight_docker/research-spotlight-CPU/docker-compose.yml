@@ -12,7 +12,7 @@ services:
       - research-spotlight-hf:/cache/huggingface
 
     environment:
-      LLAMA_HF_MODEL: ggml-org/GLM-OCR-GGUF:F16
+      LLAMA_HF_MODEL: ggml-org/GLM-OCR-GGUF:Q8_0
       LLAMA_HOST: 127.0.0.1
       LLAMA_PORT: 8080
 
