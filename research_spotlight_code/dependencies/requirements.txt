@@ -6,7 +6,10 @@ ipywidgets
 notebook
 widgetsnbextension
 wget
-wtpsplit
+wtpsplit-lite
+pillow
+pypdfium2
+llama-cpp-python
 srsly
 pyspark
 rdflib
