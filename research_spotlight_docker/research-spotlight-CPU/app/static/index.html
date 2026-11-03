@@ -17,11 +17,6 @@
 
 <body>
   <div class="app-shell">
-
-    <!-- ======================================================
-         SIDEBAR
-         ====================================================== -->
-
     <aside class="sidebar">
       <div class="brand">
         <div>
@@ -38,25 +33,14 @@
         ></div>
       </div>
     </aside>
-
-
-    <!-- ======================================================
-         MAIN CONTENT
-         ====================================================== -->
-
     <main class="main">
-
-      <!-- TOP BAR -->
-
       <header class="topbar">
         <div>
           <div class="eyebrow">RESEARCH SPOTLIGHT PIPELINE</div>
-
           <h1>
             Transform research publications into a scholarly knowledge graph.
           </h1>
         </div>
-
         <button
           id="themeToggle"
           class="theme-toggle"
@@ -70,58 +54,34 @@
           >☀</span>
         </button>
       </header>
-
-
-      <!-- ====================================================
-           WORKSPACE
-           ==================================================== -->
-
       <section
         id="workspace"
         class="workspace"
       >
-
-        <!-- ==================================================
-             START / UPLOAD VIEW
-             ================================================== -->
-
         <div
           id="startView"
           class="hero-card"
         >
-
           <div class="hero-copy">
-
             <div class="hero-badge">
               PDF → entities → relations → RDF
             </div>
-
             <h2>
               Upload a paper set and walk through the pipeline.
             </h2>
-
             <p>
               Each stage is explicit. The output is saved before
               the next stage becomes available.
             </p>
-
           </div>
-
-
-          <!-- UPLOAD FORM -->
-
           <form
             id="uploadForm"
             class="upload-panel"
           >
-
-            <!-- PDF DROPZONE -->
-
             <label
               class="dropzone"
               id="dropzone"
             >
-
               <input
                 id="pdfInput"
                 name="pdfs"
@@ -130,35 +90,24 @@
                 multiple
                 required
               />
-
               <div class="upload-icon">
                 ↑
               </div>
-
               <strong>
                 Drop your PDFs here
               </strong>
-
               <span>
                 or click to choose multiple files
               </span>
-
               <div
                 id="fileList"
                 class="file-list"
               ></div>
-
             </label>
-
-
-            <!-- METADATA -->
-
             <label class="metadata-upload">
-
               <span>
                 Required metadata.jsonl
               </span>
-
               <input
                 id="metadataInput"
                 name="metadata"
@@ -166,22 +115,13 @@
                 accept="application/json,.jsonl,.txt"
                 required
               />
-
             </label>
-
-
-            <!-- VALIDATION MESSAGE -->
-
             <div
               id="uploadValidation"
               class="upload-validation"
               role="alert"
               aria-live="polite"
             ></div>
-
-
-            <!-- CREATE RUN -->
-
             <button
               class="primary-btn"
               id="createRunBtn"
@@ -190,22 +130,12 @@
               Create run
               <span>→</span>
             </button>
-
           </form>
         </div>
-
-
-        <!-- ==================================================
-             PIPELINE STAGE VIEW
-             ================================================== -->
-
         <div
           id="stageView"
           class="stage-card hidden"
         >
-
-          <!-- STAGE HEADER -->
-
           <div class="stage-head">
 
             <div>
@@ -234,7 +164,7 @@
           </div>
 
 
-          <!-- STAGE STATS -->
+          
 
           <div
             id="stageStats"
@@ -242,7 +172,7 @@
           ></div>
 
 
-          <!-- EXECUTION -->
+          
 
           <div class="execution-card">
 
@@ -252,7 +182,7 @@
                 Ready to run
               </span>
 
-              <!-- Kept because app.js currently references it -->
+              
               <span id="stageArtifactLabel">
                 Waiting for output
               </span>
@@ -260,7 +190,7 @@
             </div>
 
 
-            <!-- TIMER -->
+            
 
             <div class="time-line">
 
@@ -275,19 +205,24 @@
             </div>
 
 
-            <!-- PROGRESS -->
+            
 
             <div class="progress-track">
 
               <div
                 id="stageProgress"
                 class="progress-fill"
+                role="progressbar"
+                aria-label="Stage workload progress"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
               ></div>
 
             </div>
 
 
-            <!-- LOG -->
+            
 
             <div
               id="stageLog"
@@ -302,9 +237,7 @@
           </div>
 
 
-          <!-- ==================================================
-               FINAL TOTAL TIME
-               ================================================== -->
+          
 
           <div
             id="totalTimeCard"
@@ -330,9 +263,7 @@
           </div>
 
 
-          <!-- ==================================================
-               STAGE PREVIEW / VISUALIZATION
-               ================================================== -->
+          
 
           <div
             id="preview"
@@ -340,9 +271,7 @@
           ></div>
 
 
-          <!-- ==================================================
-               STAGE ACTIONS
-               ================================================== -->
+          
 
           <div class="stage-actions">
 
@@ -377,6 +306,15 @@
                 <span>↻</span>
               </button>
 
+              <button
+                class="primary-btn hidden"
+                id="downloadBtn"
+                type="button"
+              >
+                Download run
+                <span>↓</span>
+              </button>
+
             </div>
 
           </div>
@@ -389,9 +327,7 @@
   </div>
 
 
-  <!-- ======================================================
-       APPLICATION JAVASCRIPT
-       ====================================================== -->
+  
 
   <script src="/static/app.js"></script>
 

@@ -7,6 +7,7 @@ const state = {
   stageDurations: {},
   totalCompletedMs: 0,
   timerHandle: null,
+  progressHandle: null,
 
   visualization: {
     stageId: null,
@@ -14,24 +15,25 @@ const state = {
     index: 0,
   },
 
-  /*
-   * Final visualization data for each completed module.
-   * Cleared ONLY by reset/new run.
-   */
+  
   visualizationCache: {},
 
-  /*
-   * Current example index for each visualization.
-   */
+  
   visualizationIndex: {},
 };
 
 const $ = (id) => document.getElementById(id);
 
+function setStageProgress(value) {
+  const percent = Math.max(0, Math.min(100, Number(value) || 0));
+  const bar = $('stageProgress');
+  if (!bar) return;
+  bar.style.width = `${percent}%`;
+  bar.setAttribute('aria-valuenow', String(Math.round(percent)));
+}
 
-/* ============================================================
-   API
-   ============================================================ */
+
+
 
 async function api(url, options = {}) {
   const res = await fetch(url, options);
@@ -56,9 +58,7 @@ async function api(url, options = {}) {
 }
 
 
-/* ============================================================
-   TIME
-   ============================================================ */
+
 
 function formatDuration(ms) {
   const totalSeconds =
@@ -94,6 +94,30 @@ function clearTimer() {
     clearInterval(state.timerHandle);
     state.timerHandle = null;
   }
+}
+
+function startProgressPolling(stage) {
+  if (state.progressHandle) clearInterval(state.progressHandle);
+  const poll = async () => {
+    try {
+      state.run = await api(`/api/runs/${state.run.run_id}`);
+      const info = state.run.stages?.[stage.id];
+      const p = info?.progress;
+      if (p && Number(p.total) > 0) {
+        const percent = Math.max(0, Math.min(100, 100 * Number(p.done) / Number(p.total)));
+        setStageProgress(percent);
+        $('stageLog').textContent = `${p.message || 'Processing'}\n${p.done} / ${p.total}`;
+      }
+      if (info?.status !== 'running') {
+        clearInterval(state.progressHandle);
+        state.progressHandle = null;
+        finishStageTimer(stage.id);
+        showStage();
+      }
+    } catch (_) {  }
+  };
+  state.progressHandle = setInterval(poll, 700);
+  poll();
 }
 
 function startStageTimer(stageId) {
@@ -159,9 +183,7 @@ function finishStageTimer(stageId) {
 }
 
 
-/* ============================================================
-   CURRENT STAGE
-   ============================================================ */
+
 
 function currentStage() {
   return (
@@ -190,9 +212,7 @@ function currentStageInfo() {
 }
 
 
-/* ============================================================
-   PIPELINE STATE
-   ============================================================ */
+
 
 function isPipelineRunning() {
   if (
@@ -240,9 +260,7 @@ function getLastCompletedIndex() {
 }
 
 
-/* ============================================================
-   SIDEBAR NAVIGATION
-   ============================================================ */
+
 
 function renderSteps() {
   const pipelineRunning =
@@ -275,14 +293,7 @@ function renderSteps() {
           index ===
             state.stageIndex;
 
-        /*
-         * Navigation rules:
-         *
-         * - While running: nothing clickable.
-         * - Completed stages: clickable for review.
-         * - Current unfinished stage: clickable.
-         * - Locked future stages: not clickable.
-         */
+        
         const canOpen =
           !pipelineRunning &&
           (
@@ -444,9 +455,7 @@ function openStageFromSidebar(index) {
 }
 
 
-/* ============================================================
-   RESET / START VIEW
-   ============================================================ */
+
 
 function showStartView() {
   clearTimer();
@@ -463,10 +472,7 @@ function showStartView() {
   state.totalCompletedMs =
     0;
 
-  /*
-   * Reset is the ONLY operation that
-   * clears visualization history.
-   */
+  
   state.visualization = {
     stageId: null,
     items: [],
@@ -521,9 +527,7 @@ function showStartView() {
 }
 
 
-/* ============================================================
-   STATS
-   ============================================================ */
+
 
 function renderStats(stageId) {
   const info =
@@ -596,9 +600,7 @@ function renderStats(stageId) {
 }
 
 
-/* ============================================================
-   VISUALIZATION STAGE HELPERS
-   ============================================================ */
+
 
 function normalizeRelationStageId(stageId) {
   return String(stageId || '')
@@ -619,9 +621,7 @@ function isRelationExtractionStage(stageId) {
 }
 
 
-/* ============================================================
-   VISUALIZATION LOADING
-   ============================================================ */
+
 
 async function renderPreview(stageId) {
   const relationStage =
@@ -631,6 +631,7 @@ async function renderPreview(stageId) {
 
   const normalVisualizationStages = [
     'entity-extraction',
+    'entity-disambiguation',
     'entity-linking',
   ];
 
@@ -640,9 +641,7 @@ async function renderPreview(stageId) {
       stageId
     );
 
-  /*
-   * No visualization for the other modules.
-   */
+  
   if (!isVisualizationStage) {
     $('preview')
       .classList.add(
@@ -656,9 +655,7 @@ async function renderPreview(stageId) {
   }
 
 
-  /* ----------------------------------------------------------
-     REUSE CACHED RELATION VISUALIZATION
-     ---------------------------------------------------------- */
+  
 
   if (relationStage) {
     const cached =
@@ -695,9 +692,7 @@ async function renderPreview(stageId) {
   }
 
 
-  /* ----------------------------------------------------------
-     REUSE ENTITY VISUALIZATION CACHE
-     ---------------------------------------------------------- */
+  
 
   if (!relationStage) {
     const cached =
@@ -745,6 +740,8 @@ async function renderPreview(stageId) {
         'entity-extraction'
       ) {
         renderEntityExtractionExample();
+      } else if (stageId === 'entity-disambiguation') {
+        renderEntityDisambiguationExample();
       } else {
         renderEntityLinkingExample();
       }
@@ -754,9 +751,7 @@ async function renderPreview(stageId) {
   }
 
 
-  /* ----------------------------------------------------------
-     FIND OUTPUT ARTIFACT
-     ---------------------------------------------------------- */
+  
 
   const files =
     state.run
@@ -786,9 +781,7 @@ async function renderPreview(stageId) {
     files[0];
 
 
-  /* ----------------------------------------------------------
-     LOAD OUTPUT ARTIFACT
-     ---------------------------------------------------------- */
+  
 
   try {
     const res =
@@ -823,9 +816,7 @@ async function renderPreview(stageId) {
         );
 
 
-    /* --------------------------------------------------------
-       RELATION EXTRACTION
-       -------------------------------------------------------- */
+    
 
     if (relationStage) {
       renderRelationExtractionVisualization(
@@ -837,9 +828,7 @@ async function renderPreview(stageId) {
     }
 
 
-    /* --------------------------------------------------------
-       ENTITY EXTRACTION
-       -------------------------------------------------------- */
+    
 
     if (
       stageId ===
@@ -852,10 +841,13 @@ async function renderPreview(stageId) {
       return;
     }
 
+    if (stageId === 'entity-disambiguation') {
+      renderEntityDisambiguationVisualization(data);
+      return;
+    }
 
-    /* --------------------------------------------------------
-       ENTITY LINKING
-       -------------------------------------------------------- */
+
+    
 
     if (
       stageId ===
@@ -923,15 +915,13 @@ function renderEmptyVisualization(stageId) {
 }
 
 
-/* ============================================================
-   ENTITY EXTRACTION VISUALIZATION
-   ============================================================ */
+
 
 function renderEntityExtractionVisualization(
   data
 ) {
   const items =
-    data.filter(
+    data.map((item, _rowIndex) => ({ ...item, _rowIndex })).filter(
       item =>
         item &&
         typeof item.text ===
@@ -998,9 +988,7 @@ function renderEntityExtractionExample() {
   }
 
   const spans =
-    [...(
-      item.spans || []
-    )]
+    (item.spans || []).map((span, _spanIndex) => ({ ...span, _spanIndex }))
       .filter(
         span =>
           Number.isFinite(
@@ -1045,7 +1033,7 @@ function renderEntityExtractionExample() {
       );
 
   const highlightedText =
-    buildHighlightedText(
+    buildOverlappingEntityText(
       item.text,
       spans
     );
@@ -1057,10 +1045,6 @@ function renderEntityExtractionExample() {
 
         <div class="preview-title">
           Entity Extraction
-        </div>
-
-        <div class="visualization-subtitle">
-          METHOD · ACTIVITY · GOAL
         </div>
 
       </div>
@@ -1090,8 +1074,15 @@ function renderEntityExtractionExample() {
 
     </div>
 
-    <div class="ner-text">
-      ${highlightedText}
+    <div class="ner-text">${highlightedText}</div>
+
+    <div class="annotation-tools">
+      <span>Click a label to select an entity, or highlight text to add:</span>
+      <button class="annotation-btn method" data-add-label="METHOD" type="button">+ Method</button>
+      <button class="annotation-btn activity" data-add-label="ACTIVITY" type="button">+ Activity</button>
+      <button class="annotation-btn goal" data-add-label="GOAL" type="button">+ Goal</button>
+      <button class="annotation-btn danger" data-delete-entity type="button">Delete selected entity</button>
+      <span class="annotation-feedback" aria-live="polite"></span>
     </div>
 
     <div class="visualization-controls">
@@ -1132,12 +1123,131 @@ function renderEntityExtractionExample() {
   attachVisualizationControls(
     renderEntityExtractionExample
   );
+  attachEntityAnnotationControls();
+}
+
+function attachEntityAnnotationControls() {
+  const feedback = $('preview').querySelector('.annotation-feedback');
+  const item = state.visualization.items[state.visualization.index];
+  const root = $('preview').querySelector('.ner-text');
+  let selectedSpan = null;
+  let selectedRangeOffsets = null;
+  const captureSelection = () => {
+    const selection = window.getSelection();
+    if (!selection?.rangeCount || selection.isCollapsed) return;
+    const range = selection.getRangeAt(0);
+    if (!root?.contains(range.startContainer) || !root.contains(range.endContainer)) return;
+    selectedRangeOffsets = {
+      start: textOffset(root, range.startContainer, range.startOffset),
+      end: textOffset(root, range.endContainer, range.endOffset),
+    };
+  };
+  root?.addEventListener('mouseup', captureSelection);
+  root?.addEventListener('keyup', captureSelection);
+  root?.querySelectorAll('.entity-marker').forEach(el => el.addEventListener('click', event => {
+    event.preventDefault();
+    event.stopPropagation();
+    selectedSpan = Number(el.dataset.spanIndex);
+    root.querySelectorAll('.entity-span').forEach(node => node.classList.remove('selected'));
+    root.querySelectorAll('.entity-marker').forEach(node => node.classList.remove('selected'));
+    el.classList.add('selected');
+    root.querySelectorAll(`[data-span-ids~="${selectedSpan}"]`).forEach(node => node.classList.add('selected'));
+    if (feedback) feedback.textContent = `Selected ${item.spans[selectedSpan]?.label || 'entity'}`;
+  }));
+  $('preview').querySelectorAll('[data-add-label]').forEach(button => button.addEventListener('click', async () => {
+    captureSelection();
+    if (!selectedRangeOffsets) {
+      if (feedback) feedback.textContent = 'Highlight a text span first.';
+      return;
+    }
+    const { start, end } = selectedRangeOffsets;
+    await persistAnnotation('entity-extraction', { row_index: item._rowIndex, action: 'add', label: button.dataset.addLabel, start, end }, feedback);
+  }));
+  $('preview').querySelector('[data-delete-entity]')?.addEventListener('click', async () => {
+    if (selectedSpan === null) { if (feedback) feedback.textContent = 'Click an entity first.'; return; }
+    await persistAnnotation('entity-extraction', { row_index: item._rowIndex, span_index: selectedSpan, action: 'delete' }, feedback);
+  });
+}
+
+function textOffset(root, node, offset) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, { acceptNode: n => n.parentElement?.closest('.entity-label') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT });
+  let count = 0, current;
+  while ((current = walker.nextNode())) {
+    if (current === node) return count + offset;
+    count += current.textContent.length;
+  }
+  return count;
+}
+
+function buildOverlappingEntityText(text, spans) {
+  if (!text) return '';
+  const valid = spans.map((span, spanIndex) => ({
+    ...span, spanIndex: span._spanIndex ?? spanIndex, start: Number(span.start), end: Number(span.end),
+  })).filter(span => Number.isInteger(span.start) && Number.isInteger(span.end) && span.start >= 0 && span.end > span.start && span.end <= text.length);
+  const boundaries = [...new Set([0, text.length, ...valid.flatMap(span => [span.start, span.end])])].sort((a, b) => a - b);
+  const colors = { METHOD: '#7aecec', ACTIVITY: '#45de2a', GOAL: '#e66225' };
+  let html = '';
+  for (let i = 0; i < boundaries.length - 1; i += 1) {
+    const start = boundaries[i], end = boundaries[i + 1];
+    const active = valid.filter(span => span.start < end && span.end > start);
+    const chunk = escapeHtml(text.slice(start, end));
+    if (!active.length) { html += chunk; continue; }
+    const labels = active.map(span => span.label || 'METHOD');
+    const shadows = labels.map((label, index) => `inset 0 -${(index + 1) * 3}px ${colors[label] || '#8b5cf6'}`).join(',');
+    const markers = valid.filter(span => span.start === start).map((span, markerIndex) => `<button type="button" class="entity-label entity-marker ${escapeAttribute(String(span.label || 'METHOD').toLowerCase())}" style="left:${markerIndex * 56}px" data-span-index="${span.spanIndex}" title="Select ${escapeAttribute(span.label || 'entity')}">${escapeHtml(span.label || 'METHOD')}</button>`).join('');
+    html += `<span class="entity-span ${labels.map(label => escapeAttribute(label.toLowerCase())).join(' ')}" data-span-ids="${active.map(span => span.spanIndex).join(' ')}" style="box-shadow:${shadows}" title="${escapeAttribute(labels.join(' + '))}">${markers}<span class="entity-text">${chunk}</span></span>`;
+  }
+  return html;
+}
+
+async function persistAnnotation(stage, payload, feedback) {
+  try {
+    const result = await api(`/api/runs/${state.run.run_id}/annotations/${stage}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const rows = result.rows.map((row, _rowIndex) => ({ ...row, _rowIndex }));
+    if (stage === 'entity-disambiguation') renderEntityDisambiguationVisualization(result.rows);
+    else {
+      state.visualization.items = rows;
+      state.visualizationCache[stage] = rows;
+    }
+    if (feedback) feedback.textContent = 'Saved';
+    if (stage === 'entity-extraction') renderEntityExtractionExample();
+  } catch (err) { if (feedback) feedback.textContent = err.message; }
+}
+
+function renderEntityDisambiguationVisualization(data) {
+  state.visualizationCache['entity-disambiguation'] = data.map((row, _rowIndex) => ({ ...row, _rowIndex }));
+  const rows = state.visualizationCache['entity-disambiguation'];
+  const examples = [];
+  rows.forEach(row => (row.spans || []).forEach((span, span_index) => {
+    if (span.label === 'METHOD') examples.push({ row_index: row._rowIndex, span_index, row, span });
+  }));
+  state.visualization = { stageId: 'entity-disambiguation', items: examples, index: Math.min(state.visualizationIndex['entity-disambiguation'] || 0, Math.max(0, examples.length - 1)) };
+  $('preview').classList.remove('hidden');
+  if (!examples.length) { $('preview').innerHTML = '<div class="visualization-empty">No METHOD mentions are available to review.</div>'; return; }
+  renderEntityDisambiguationExample();
+}
+
+function renderEntityDisambiguationExample() {
+  const { items, index } = state.visualization;
+  const example = items[index];
+  if (!example) return;
+  const { row, span } = example;
+  const mention = row.text.slice(span.start, span.end);
+  $('preview').innerHTML = `<div class="visualization-header"><div><div class="preview-title">Entity Disambiguation</div></div><div class="visualization-counter">${index + 1} / ${items.length}</div></div>
+    <div class="ner-text linking-text">${buildHighlightedText(row.text, [span])}</div>
+    <div class="entity-details"><div class="entity-detail-label">ANNOTATION MENTION</div><div class="entity-name">${escapeHtml(mention)}</div>
+      <label class="link-edit-label">Wikipedia URL<input class="link-edit-input" value="${escapeAttribute(span.wikipedia_url || '')}" placeholder="https://en.wikipedia.org/wiki/…" type="url"></label>
+      <div class="annotation-tools"><button class="annotation-btn" data-save-link type="button">Save URL</button><button class="annotation-btn danger" data-delete-mention type="button">Delete mention</button><span class="annotation-feedback" aria-live="polite"></span></div>
+    </div>
+    <div class="visualization-controls"><button class="viz-btn" data-viz-control="first" type="button">↺</button><button class="viz-btn" data-viz-control="prev" type="button">←</button><button class="viz-btn" data-viz-control="next" type="button">→</button></div>`;
+  const feedback = $('preview').querySelector('.annotation-feedback');
+  $('preview').querySelector('[data-save-link]').addEventListener('click', () => persistAnnotation('entity-disambiguation', { row_index: example.row_index, span_index: example.span_index, action: 'link', wikipedia_url: $('preview').querySelector('.link-edit-input').value }, feedback));
+  $('preview').querySelector('[data-delete-mention]').addEventListener('click', () => persistAnnotation('entity-disambiguation', { row_index: example.row_index, span_index: example.span_index, action: 'delete' }, feedback));
+  attachVisualizationControls(renderEntityDisambiguationExample);
 }
 
 
-/* ============================================================
-   ENTITY LINKING VISUALIZATION
-   ============================================================ */
+
 
 function renderEntityLinkingVisualization(
   data
@@ -1195,14 +1305,7 @@ function renderEntityLinkingVisualization(
           end
         );
 
-      /*
-       * Never display literal "None".
-       *
-       * Priority:
-       *   1. proper_name
-       *   2. wikipedia_title
-       *   3. original mention
-       */
+      
       const rawProperName =
         span.proper_name;
 
@@ -1351,10 +1454,6 @@ function renderEntityLinkingExample() {
           Entity Linking
         </div>
 
-        <div class="visualization-subtitle">
-          METHOD
-        </div>
-
       </div>
 
       <div class="visualization-counter">
@@ -1424,20 +1523,9 @@ function renderEntityLinkingExample() {
 }
 
 
-/* ============================================================
-   RELATION EXTRACTION VISUALIZATION
-   ============================================================ */
 
-/*
- * The notebook creates one visualization example
- * for every:
- *
- *   sentence + relation
- *
- * We preserve that exact structure here, while handling
- * the important difference between Python character offsets
- * and JavaScript UTF-16 offsets.
- */
+
+
 
 function relationKind(label) {
   const normalized =
@@ -1486,12 +1574,7 @@ function relationRangeKind(label) {
 }
 
 
-/*
- * Build the browser-side relation visualization items.
- *
- * Backend NER offsets come from spaCy/Python and therefore use
- * Python string indexing (Unicode code points).
- */
+
 function buildRelationVisualizationItems(
   data
 ) {
@@ -1507,9 +1590,7 @@ function buildRelationVisualizationItems(
       continue;
     }
 
-    /*
-     * Python len(text) counts Unicode code points.
-     */
+    
     const pythonLength =
       Array.from(text).length;
 
@@ -1583,9 +1664,7 @@ function buildRelationVisualizationItems(
         continue;
       }
 
-      /*
-       * Recreate the span using Python-style indexing.
-       */
+      
       const domainText =
         slicePythonText(
           text,
@@ -1600,10 +1679,7 @@ function buildRelationVisualizationItems(
           rangeEnd
         );
 
-      /*
-       * Backend now provides exact span text.
-       * Use that as an additional validation guard.
-       */
+      
       if (
         domain.text !== undefined &&
         domain.text !== domainText
@@ -1678,18 +1754,7 @@ function buildRelationVisualizationItems(
 }
 
 
-/*
- * Return a substring using Python-style indexing.
- *
- * Python:
- *   text[start:end]
- *
- * JavaScript:
- *   text.slice(start, end)
- *
- * are NOT equivalent when the string contains characters represented
- * by UTF-16 surrogate pairs.
- */
+
 function slicePythonText(
   text,
   start,
@@ -1706,24 +1771,7 @@ function slicePythonText(
 }
 
 
-/*
- * Convert a Python Unicode-code-point offset into the corresponding
- * JavaScript UTF-16 offset.
- *
- * Example:
- *
- *   Text: A😀B
- *
- * Python offsets:
- *   A = 0
- *   😀 = 1
- *   B = 2
- *
- * JavaScript UTF-16 offsets:
- *   A = 0
- *   😀 = 1..2
- *   B = 3
- */
+
 function pythonOffsetToUtf16(
   text,
   pythonOffset
@@ -1772,9 +1820,7 @@ function pythonOffsetToUtf16(
 }
 
 
-/*
- * Create an SVG element safely.
- */
+
 function createSvgElement(
   tag,
   attrs = {}
@@ -1803,13 +1849,7 @@ function createSvgElement(
 }
 
 
-/*
- * Obtain the sentence text node.
- *
- * The renderer inserts the sentence through textContent, so there
- * is exactly one plain text node and the backend offsets continue
- * to refer to the original sentence.
- */
+
 function getRelationTextNode(
   sentence
 ) {
@@ -1834,11 +1874,7 @@ function getRelationTextNode(
 }
 
 
-/*
- * Convert Python code-point offsets into DOM Range offsets.
- *
- * Range APIs use JavaScript string indexing, which is UTF-16 based.
- */
+
 function getTextRangeRects(
   textNode,
   start,
@@ -1942,14 +1978,7 @@ function getTextRangeRects(
 }
 
 
-/*
- * Choose the rectangles that should anchor the relation arrow.
- *
- * This is important when:
- *
- * 1. an entity wraps onto multiple visual lines;
- * 2. the two relation spans overlap, as EMPLOYS can do.
- */
+
 function chooseRelationAnchorRects(
   domainRects,
   rangeRects,
@@ -1961,12 +1990,7 @@ function chooseRelationAnchorRects(
     relation.range.start <
       relation.domain.end;
 
-  /*
-   * Overlapping relation spans.
-   *
-   * EMPLOYS in the original notebook is generated specifically from
-   * overlapping ACTIVITY/METHOD spans.
-   */
+  
   if (
     characterOverlap
   ) {
@@ -2069,13 +2093,7 @@ function chooseRelationAnchorRects(
     };
   }
 
-  /*
-   * Normal relation where domain appears first.
-   *
-   * Use the LAST rectangle of the domain and the FIRST rectangle
-   * of the range. This is much more reliable when either entity
-   * wraps onto multiple lines.
-   */
+  
   if (
     relation.domain.end <=
     relation.range.start
@@ -2091,12 +2109,7 @@ function chooseRelationAnchorRects(
     };
   }
 
-  /*
-   * Range appears first.
-   *
-   * Domain remains the source of the arrow, so use the FIRST
-   * domain rectangle and LAST range rectangle.
-   */
+  
   return {
     domainRect:
       domainRects[0],
@@ -2109,9 +2122,7 @@ function chooseRelationAnchorRects(
 }
 
 
-/*
- * Draw the current relation.
- */
+
 function drawRelationVisualization(
   root
 ) {
@@ -2154,9 +2165,7 @@ function drawRelationVisualization(
   const relation =
     item.relation;
 
-  /*
-   * Resolve the exact backend spans.
-   */
+  
   const domainRects =
     getTextRangeRects(
       textNode,
@@ -2185,9 +2194,7 @@ function drawRelationVisualization(
     return;
   }
 
-  /*
-   * Remove the old drawing before recalculating it.
-   */
+  
   svg.replaceChildren();
 
   sentence
@@ -2209,11 +2216,7 @@ function drawRelationVisualization(
     );
 
 
-  /*
-   * ----------------------------------------------------------
-   * ENTITY HIGHLIGHTS
-   * ----------------------------------------------------------
-   */
+  
 
   function addHighlight(
     rects,
@@ -2245,9 +2248,7 @@ function drawRelationVisualization(
         box.style.height =
           `${rect.height + 4}px`;
 
-        /*
-         * Only put the semantic label on the first visual line.
-         */
+        
         if (
           index === 0 &&
           label
@@ -2292,11 +2293,7 @@ function drawRelationVisualization(
   );
 
 
-  /*
-   * ----------------------------------------------------------
-   * SVG SIZE
-   * ----------------------------------------------------------
-   */
+  
 
   const width =
     sentence.clientWidth;
@@ -2320,21 +2317,14 @@ function drawRelationVisualization(
   );
 
 
-  /*
-   * ----------------------------------------------------------
-   * ARROW MARKER
-   * ----------------------------------------------------------
-   */
+  
 
   const defs =
     createSvgElement(
       'defs'
     );
 
-  /*
-   * Unique marker ID prevents collisions when the visualization
-   * is redrawn.
-   */
+  
   const markerId =
     `relation-arrow-marker-${Math.random()
       .toString(36)
@@ -2392,11 +2382,7 @@ function drawRelationVisualization(
   );
 
 
-  /*
-   * ----------------------------------------------------------
-   * CHOOSE ARROW ANCHORS
-   * ----------------------------------------------------------
-   */
+  
 
   const {
     domainRect,
@@ -2420,23 +2406,12 @@ function drawRelationVisualization(
   let ty;
 
 
-  /*
-   * ----------------------------------------------------------
-   * OVERLAPPING RELATION
-   * ----------------------------------------------------------
-   */
+  
 
   if (
     overlaps
   ) {
-    /*
-     * Preserve original notebook semantics for EMPLOYS:
-     * the domain and range can overlap.
-     *
-     * Put the endpoints on opposite sides so the arrow
-     * remains visible rather than collapsing inside the
-     * same highlighted area.
-     */
+    
     sx =
       domainRect.left - 4;
 
@@ -2450,11 +2425,7 @@ function drawRelationVisualization(
       rangeRect.top - 4;
 
 
-  /*
-   * ----------------------------------------------------------
-   * DOMAIN BEFORE RANGE
-   * ----------------------------------------------------------
-   */
+  
 
   } else if (
     relation.domain.end <=
@@ -2473,18 +2444,10 @@ function drawRelationVisualization(
       rangeRect.top - 4;
 
 
-  /*
-   * ----------------------------------------------------------
-   * RANGE BEFORE DOMAIN
-   * ----------------------------------------------------------
-   */
+  
 
   } else {
-    /*
-     * Relation direction is still:
-     *
-     *   domain -> range
-     */
+    
     sx =
       domainRect.left - 2;
 
@@ -2499,11 +2462,7 @@ function drawRelationVisualization(
   }
 
 
-  /*
-   * ----------------------------------------------------------
-   * CURVE LANE
-   * ----------------------------------------------------------
-   */
+  
 
   const highestEntityTop =
     Math.min(
@@ -2531,11 +2490,7 @@ function drawRelationVisualization(
     );
 
 
-  /*
-   * ----------------------------------------------------------
-   * CURVED DOMAIN -> RANGE ARROW
-   * ----------------------------------------------------------
-   */
+  
 
   const pathData =
     [
@@ -2582,11 +2537,7 @@ function drawRelationVisualization(
   );
 
 
-  /*
-   * ----------------------------------------------------------
-   * RELATION LABEL
-   * ----------------------------------------------------------
-   */
+  
 
   const edgeLabel =
     document.createElement(
@@ -2633,9 +2584,7 @@ function drawRelationVisualization(
 }
 
 
-/*
- * Render relation visualization from JSONL.
- */
+
 function renderRelationExtractionVisualization(
   data,
   stageId
@@ -2699,9 +2648,7 @@ function renderRelationExtractionVisualization(
 }
 
 
-/*
- * Render the selected relation example.
- */
+
 function renderRelationExtractionExample(
   stageId
 ) {
@@ -2762,17 +2709,7 @@ function renderRelationExtractionExample(
     );
 
 
-  /*
-   * IMPORTANT:
-   *
-   * Do NOT inject item.text with innerHTML.
-   *
-   * We first create an empty .relation-text container,
-   * then insert the sentence with textContent.
-   *
-   * This guarantees that the browser gets exactly the same
-   * character sequence as the backend.
-   */
+  
   $('preview').innerHTML = `
     <div class="relation-visualization">
 
@@ -2781,18 +2718,6 @@ function renderRelationExtractionExample(
         <div>
           <div class="preview-title">
             Relation Extraction
-          </div>
-
-          <div class="visualization-subtitle">
-            ${escapeHtml(
-              relation.domain.label ||
-              'ACTIVITY'
-            )}
-            →
-            ${escapeHtml(
-              relation.range.label ||
-              'ENTITY'
-            )}
           </div>
         </div>
 
@@ -2868,9 +2793,7 @@ function renderRelationExtractionExample(
   `;
 
 
-  /*
-   * Insert the exact sentence as plain text.
-   */
+  
   const relationText =
     $('preview')
       .querySelector(
@@ -2887,9 +2810,7 @@ function renderRelationExtractionExample(
     item.text;
 
 
-  /*
-   * Visualization controls.
-   */
+  
   attachVisualizationControls(
     () => {
       const count =
@@ -2915,9 +2836,7 @@ function renderRelationExtractionExample(
   );
 
 
-  /*
-   * Get visualization root.
-   */
+  
   const root =
     $('preview')
       .querySelector(
@@ -2934,18 +2853,14 @@ function renderRelationExtractionExample(
     item;
 
 
-  /*
-   * Draw after layout exists.
-   */
+  
   requestAnimationFrame(
     () => {
       drawRelationVisualization(
         root
       );
 
-      /*
-       * Recalculate once fonts have loaded.
-       */
+      
       if (
         document.fonts?.ready
       ) {
@@ -2962,9 +2877,7 @@ function renderRelationExtractionExample(
 }
 
 
-/* ============================================================
-   RELATION RESIZE
-   ============================================================ */
+
 
 window.addEventListener(
   'resize',
@@ -2990,9 +2903,7 @@ window.addEventListener(
 );
 
 
-/* ============================================================
-   TEXT HIGHLIGHTING
-   ============================================================ */
+
 
 function buildHighlightedText(
   text,
@@ -3061,14 +2972,7 @@ function buildHighlightedText(
       validSpans
   ) {
 
-    /*
-     * Ignore overlapping spans in the
-     * normal Entity Extraction visualization.
-     *
-     * Relation Extraction does NOT use this
-     * function, so overlapping relations
-     * remain fully supported there.
-     */
+    
     if (
       span.start <
       cursor
@@ -3101,29 +3005,7 @@ function buildHighlightedText(
     const labelClass =
       label.toLowerCase();
 
-    html += `
-      <span
-        class="entity-span ${escapeAttribute(
-          labelClass
-        )}"
-      >
-
-        <span class="entity-text">
-          ${escapeHtml(
-            collapseDisplayWhitespace(
-              entityText
-            )
-          )}
-        </span>
-
-        <span class="entity-label">
-          ${escapeHtml(
-            label
-          )}
-        </span>
-
-      </span>
-    `;
+    html += `<span class="entity-span ${escapeAttribute(labelClass)}" data-start="${span.start}" data-end="${span.end}"><span class="entity-text">${escapeHtml(entityText)}</span><span class="entity-label">${escapeHtml(label)}</span></span>`;
 
     cursor =
       span.end;
@@ -3141,21 +3023,11 @@ function buildHighlightedText(
 function collapseDisplayWhitespace(
   value
 ) {
-  return String(value)
-    .replace(
-      /[\t\r\n\u00A0 ]+/g,
-      ' '
-    )
-    .replace(
-      /^ +| +$/g,
-      ' '
-    );
+  return String(value);
 }
 
 
-/* ============================================================
-   VISUALIZATION CONTROLS
-   ============================================================ */
+
 
 function attachVisualizationControls(
   renderFunction,
@@ -3272,9 +3144,7 @@ function attachVisualizationControls(
 }
 
 
-/* ============================================================
-   ESCAPING
-   ============================================================ */
+
 
 function escapeAttribute(value) {
   return String(value)
@@ -3317,9 +3187,7 @@ function escapeHtml(str) {
 }
 
 
-/* ============================================================
-   THEME
-   ============================================================ */
+
 
 function applyTheme(theme) {
   document.documentElement.dataset.theme =
@@ -3362,9 +3230,7 @@ function initTheme() {
 }
 
 
-/* ============================================================
-   PDF / METADATA VALIDATION
-   ============================================================ */
+
 
 function getPdfId(filename) {
   const match =
@@ -3591,10 +3457,7 @@ async function validatePdfMetadata(
   }
 
 
-  /*
-   * Every uploaded PDF must have
-   * matching metadata.
-   */
+  
   for (
     const {
       file,
@@ -3612,10 +3475,7 @@ async function validatePdfMetadata(
   }
 
 
-  /*
-   * Every metadata ID must have
-   * a corresponding PDF.
-   */
+  
   const uploadedPdfIds =
     new Set(
       pdfEntries.map(
@@ -3639,9 +3499,7 @@ async function validatePdfMetadata(
   }
 
 
-  /*
-   * Duplicate PDF IDs are not allowed.
-   */
+  
   const seenPdfIds =
     new Set();
 
@@ -3667,9 +3525,7 @@ async function validatePdfMetadata(
 }
 
 
-/* ============================================================
-   UPLOAD VALIDATION UI
-   ============================================================ */
+
 
 function getOrCreateUploadValidation() {
   let el =
@@ -3818,9 +3674,7 @@ async function validateUploadSelection() {
 }
 
 
-/* ============================================================
-   PDF DROPZONE
-   ============================================================ */
+
 
 const pdfDropzone =
   document.querySelector(
@@ -3991,10 +3845,7 @@ if (pdfDropzone) {
 }
 
 
-/*
- * Prevent browser from opening PDFs when
- * dropped outside the dropzone.
- */
+
 document.addEventListener(
   'dragover',
   event => {
@@ -4018,9 +3869,7 @@ document.addEventListener(
 );
 
 
-/* ============================================================
-   STAGE UI
-   ============================================================ */
+
 
 function showStage() {
   $('startView')
@@ -4086,9 +3935,7 @@ function showStage() {
     artifacts.length > 0;
 
 
-  /* ----------------------------------------------------------
-     HEADER
-     ---------------------------------------------------------- */
+  
 
   $('stageKicker')
     .textContent =
@@ -4117,9 +3964,7 @@ function showStage() {
       );
 
 
-  /* ----------------------------------------------------------
-     STATUS
-     ---------------------------------------------------------- */
+  
 
   if (
     isComplete
@@ -4153,9 +3998,7 @@ function showStage() {
   }
 
 
-  /* ----------------------------------------------------------
-     OUTPUT
-     ---------------------------------------------------------- */
+  
 
   $('stageArtifactLabel')
     .textContent =
@@ -4164,9 +4007,7 @@ function showStage() {
         : 'Waiting for output';
 
 
-  /* ----------------------------------------------------------
-     RUN BUTTON
-     ---------------------------------------------------------- */
+  
 
   $('runBtn')
     .classList.remove(
@@ -4198,9 +4039,7 @@ function showStage() {
   }
 
 
-  /* ----------------------------------------------------------
-     NEXT BUTTON
-     ---------------------------------------------------------- */
+  
 
   $('nextBtn')
     .classList.toggle(
@@ -4214,9 +4053,7 @@ function showStage() {
     isLastStage;
 
 
-  /* ----------------------------------------------------------
-     RESET BUTTON
-     ---------------------------------------------------------- */
+  
 
   const showReset =
     isLastStage &&
@@ -4232,38 +4069,31 @@ function showStage() {
   $('resetBtn').disabled =
     !showReset;
 
+  $('downloadBtn').classList.toggle('hidden', !(isLastStage && isComplete));
 
-  /* ----------------------------------------------------------
-     PROGRESS
-     ---------------------------------------------------------- */
+
+  
 
   if (
     isComplete
   ) {
 
-    $('stageProgress')
-      .style.width =
-      '100%';
+    setStageProgress(100);
 
   } else if (
     isRunning
   ) {
-
-    $('stageProgress')
-      .style.width =
-      '58%';
+    const progress = currentStageInfo()?.progress;
+    const ratio = progress?.total ? Number(progress.done || 0) / Number(progress.total) : 0;
+    setStageProgress(ratio * 100);
 
   } else {
 
-    $('stageProgress')
-      .style.width =
-      '0%';
+    setStageProgress(0);
   }
 
 
-  /* ----------------------------------------------------------
-     TIMER
-     ---------------------------------------------------------- */
+  
 
   const savedDuration =
     state.stageDurations[
@@ -4293,9 +4123,7 @@ function showStage() {
   }
 
 
-  /* ----------------------------------------------------------
-     MESSAGE
-     ---------------------------------------------------------- */
+  
 
   if (
     isComplete
@@ -4349,9 +4177,7 @@ function showStage() {
   }
 
 
-  /* ----------------------------------------------------------
-     TOTAL TIME
-     ---------------------------------------------------------- */
+  
 
   if (
     isLastStage &&
@@ -4378,9 +4204,7 @@ function showStage() {
   }
 
 
-  /* ----------------------------------------------------------
-     VISUALIZATION / STATS / SIDEBAR
-     ---------------------------------------------------------- */
+  
 
   renderPreview(
     stage.id
@@ -4394,9 +4218,7 @@ function showStage() {
 }
 
 
-/* ============================================================
-   THEME
-   ============================================================ */
+
 
 $('themeToggle')
   .addEventListener(
@@ -4418,9 +4240,7 @@ $('themeToggle')
   );
 
 
-/* ============================================================
-   PDF / METADATA INPUTS
-   ============================================================ */
+
 
 $('pdfInput')
   .addEventListener(
@@ -4443,9 +4263,7 @@ $('metadataInput')
   );
 
 
-/* ============================================================
-   CREATE RUN
-   ============================================================ */
+
 
 $('uploadForm')
   .addEventListener(
@@ -4553,9 +4371,7 @@ $('uploadForm')
   );
 
 
-/* ============================================================
-   RUN MODULE
-   ============================================================ */
+
 
 $('runBtn')
   .addEventListener(
@@ -4575,9 +4391,7 @@ $('runBtn')
       const info =
         currentStageInfo();
 
-      /*
-       * Completed stages cannot be rerun.
-       */
+      
       if (
         info?.status ===
         'complete'
@@ -4585,10 +4399,7 @@ $('runBtn')
         return;
       }
 
-      /*
-       * Never start a second module while
-       * another one is running.
-       */
+      
       if (
         isPipelineRunning()
       ) {
@@ -4606,9 +4417,7 @@ $('runBtn')
         stage.id
       );
 
-      /*
-       * Immediately update frontend.
-       */
+      
       if (
         state.run?.stages?.[
           stage.id
@@ -4625,17 +4434,13 @@ $('runBtn')
         .textContent =
         'Running';
 
-      $('stageProgress')
-        .style.width =
-        '58%';
+      setStageProgress(0);
 
       $('stageLog')
         .textContent =
         `Running ${stage.title}…\nThis can take a while.`;
 
-      /*
-       * Lock sidebar immediately.
-       */
+      
       renderSteps();
 
       try {
@@ -4649,14 +4454,8 @@ $('runBtn')
             }
           );
 
-        finishStageTimer(
-          stage.id
-        );
-
-        state.run =
-          result.run;
-
-        showStage();
+        state.run = result.run;
+        startProgressPolling(stage);
 
       } catch (err) {
 
@@ -4664,11 +4463,7 @@ $('runBtn')
           stage.id
         );
 
-        /*
-         * Refresh server state because a long
-         * request can finish server-side even
-         * when the frontend connection fails.
-         */
+        
         try {
 
           state.run =
@@ -4677,9 +4472,7 @@ $('runBtn')
             );
 
         } catch (_) {
-          /*
-           * Keep current state if refresh fails.
-           */
+          
         }
 
         const latestInfo =
@@ -4702,9 +4495,7 @@ $('runBtn')
           .textContent =
           'Failed';
 
-        $('stageProgress')
-          .style.width =
-          '0%';
+        setStageProgress(0);
 
         $('stageLog')
           .textContent =
@@ -4719,9 +4510,7 @@ $('runBtn')
   );
 
 
-/* ============================================================
-   SAVE & NEXT
-   ============================================================ */
+
 
 $('nextBtn')
   .addEventListener(
@@ -4741,10 +4530,7 @@ $('nextBtn')
       const lastCompletedIndex =
         getLastCompletedIndex();
 
-      /*
-       * Only newest completed stage
-       * can continue.
-       */
+      
       if (
         state.stageIndex !==
         lastCompletedIndex
@@ -4831,9 +4617,7 @@ $('nextBtn')
   );
 
 
-/* ============================================================
-   RESET
-   ============================================================ */
+
 
 $('resetBtn')
   .addEventListener(
@@ -4852,10 +4636,18 @@ $('resetBtn')
     }
   );
 
+$('downloadBtn').addEventListener('click', () => {
+  if (!state.run?.run_id) return;
+  const anchor = document.createElement('a');
+  anchor.href = `/api/runs/${encodeURIComponent(state.run.run_id)}/download`;
+  anchor.download = `research-spotlight-${state.run.run_id}.zip`;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+});
 
-/* ============================================================
-   INITIALIZATION
-   ============================================================ */
+
+
 
 (async function init() {
   try {

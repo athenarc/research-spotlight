@@ -4,3 +4,6 @@ __pycache__
 .git
 .gitignore
 data/runs/*
+.env
+.env.*
+!.env.example

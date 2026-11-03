@@ -69,27 +69,67 @@ def normalize_metadata(path: Path, pdf_dir: Path):
 
 
 NER_MODEL_NAMES = {
-    "method": "en_deberta_v3_base_ner_method",
-    "activity": "en_deberta_v3_base_ner_activity",
-    "goal": "en_deberta_v3_base_ner_goal",
+    "method": os.getenv("HF_NER_METHOD", "NikosKprl/en_deberta_v3_base_ner_method"),
+    "activity": os.getenv("HF_NER_ACTIVITY", "NikosKprl/en_deberta_v3_base_ner_activity"),
+    "goal": os.getenv("HF_NER_GOAL", "NikosKprl/en_deberta_v3_base_ner_goal"),
 }
+
+_NER_MODELS = None
+_GENRE_MODELS = None
+
+
+def preload_ner_models():
+    """Load all configured spaCy NER pipelines once at application startup."""
+    global _NER_MODELS
+    if _NER_MODELS is None:
+        paths = ensure_models_exist()
+        _NER_MODELS = {key: _load_ner(path) for key, path in paths.items()}
+    return _NER_MODELS
+
+
+def preload_genre_models():
+    global _GENRE_MODELS
+    if _GENRE_MODELS is None:
+        from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+
+        path = os.getenv("GENRE_MODEL_PATH", "/models/genre-linking-blink")
+        _GENRE_MODELS = (
+            AutoTokenizer.from_pretrained(path, local_files_only=True),
+            AutoModelForSeq2SeqLM.from_pretrained(
+                path,
+                local_files_only=True,
+            ).eval(),
+        )
+    return _GENRE_MODELS
 
 
 def ensure_models_exist():
-    """Accept the original notebook's local model directories or bundled spaCy packages."""
+    """Resolve local, installed, or Hugging Face hosted spaCy model packages."""
     import importlib.util
 
     root = Path(os.getenv("MODEL_ROOT", "/models"))
     missing = []
     resolved = {}
 
-    for key, package_name in NER_MODEL_NAMES.items():
-        local_dir = root / package_name
+    for key, model_name in NER_MODEL_NAMES.items():
+        package_name = model_name.rstrip("/").rsplit("/", 1)[-1]
+        local_dir = Path(model_name).expanduser()
+        if not local_dir.exists():
+            local_dir = root / package_name
 
         if local_dir.exists():
             resolved[key] = str(local_dir)
         elif importlib.util.find_spec(package_name):
             resolved[key] = package_name
+        elif "/" in model_name:
+            try:
+                from huggingface_hub import snapshot_download
+                resolved[key] = snapshot_download(
+                    repo_id=model_name,
+                    cache_dir=os.getenv("HF_HOME", "/cache/huggingface"),
+                )
+            except Exception:
+                missing.append(model_name)
         else:
             missing.append(package_name)
 
@@ -102,9 +142,14 @@ def ensure_models_exist():
     return resolved
 
 
-def text_extraction(run_dir: Path):
-    from glmocr import GlmOcr
-    from wtpsplit import SaT
+def text_extraction(run_dir: Path, progress=None):
+    import base64
+    from io import BytesIO
+
+    import pypdfium2 as pdfium
+    import requests
+    from PIL import Image
+    from wtpsplit_lite import SaT
 
     pdf_dir = run_dir / "PDF"
     out_dir = run_dir / "Text_Extraction"
@@ -129,16 +174,64 @@ def text_extraction(run_dir: Path):
         ),
     )
 
-    cfg_path = os.getenv(
-        "GLMOCR_CONFIG_PATH",
-        "/app/dependencies/config.yaml",
-    )
-
     sat = SaT("sat-12l-sm")
+    def pdf_images(pdf_path: Path):
+        images = []
+        with pdfium.PdfDocument(str(pdf_path)) as pdf:
+            for page in pdf:
+                image = page.render(scale=400 / 72).to_pil().convert("RGB")
+                width, height = image.size
+                longest = max(width, height)
+                if longest > 2048:
+                    scale = 2048 / longest
+                    image = image.resize(
+                        (round(width * scale), round(height * scale)),
+                        Image.Resampling.LANCZOS,
+                    )
+                buffer = BytesIO()
+                image.save(buffer, format="PNG")
+                images.append(base64.b64encode(buffer.getvalue()).decode("utf-8"))
+        return images
+
+    def extract_page_text(images):
+        content_list = []
+        for image in images:
+            response = requests.post(
+                os.getenv("OCR_SERVER_URL", "http://127.0.0.1:8080/v1/chat/completions"),
+                json={
+                    "model": "lightonocr",
+                    "messages": [{"role": "user", "content": [
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image}"}},
+                        {"type": "text", "text": "grounding"},
+                    ]}],
+                    "max_tokens": 4096,
+                    "temperature": 0.2,
+                    "top_p": 0.9,
+                },
+                timeout=900,
+            )
+            response.raise_for_status()
+            result = response.json()
+            blocks = result["choices"][0]["message"]["content"].split("\n\n")
+            page_content = []
+            for block in blocks:
+                value = block.split(maxsplit=1)[-1].strip()
+                if block.startswith("![text+]"):
+                    if page_content:
+                        page_content[-1] += value
+                elif block.startswith("![text]"):
+                    if page_content and page_content[-1] and (
+                        page_content[-1][-1].islower() or page_content[-1][-1] == ","
+                    ):
+                        page_content[-1] += " " + value
+                    else:
+                        page_content.append(value)
+            content_list.extend(page_content)
+        return content_list
 
     all_rows = []
 
-    for pdf in pdfs:
+    for pdf_index, pdf in enumerate(pdfs, start=1):
         matching = [
             m
             for m in metadata
@@ -148,43 +241,26 @@ def text_extraction(run_dir: Path):
         ]
 
         if not matching:
+            if progress: progress(pdf_index, max(1, len(pdfs)), f"Skipping {pdf.name}: no metadata match")
             continue
 
         meta = matching[0]
 
-        with GlmOcr(
-            config_path=cfg_path,
-            mode="selfhosted",
-            log_level="ERROR",
-        ) as parser:
-            result = parser.parse(str(pdf))
-
-            final_text = [
-                text.get("content")
-                for element in result.json_result
-                for text in element
-                if text
-            ]
-
-        extracted_text = sat.split(final_text)
-
-        # Preserve sentence order while removing duplicates.
+        final_text = extract_page_text(pdf_images(pdf))
         cleaned = []
-        seen = set()
-
-        for text in extracted_text:
-            for element in text:
-                sentence = element.strip()
-
-                if (
-                    sentence
-                    and sentence not in seen
-                ):
-                    seen.add(sentence)
+        for text in final_text:
+            for sentence in sat.split(
+                text,
+                stride=128,
+                block_size=256,
+                weighting="hat",
+            ):
+                sentence = sentence.strip()
+                if len(sentence.split()) >= 7:
                     cleaned.append(sentence)
 
         for index, sentence in enumerate(cleaned):
-            if len(sentence.split()) < 9:
+            if len(sentence.split()) < 7:
                 continue
 
             row = json.loads(json.dumps(meta))
@@ -195,7 +271,11 @@ def text_extraction(run_dir: Path):
 
             all_rows.append(row)
 
+        if progress:
+            progress(pdf_index, max(1, len(pdfs)), f"Processed {pdf.name} ({pdf_index}/{len(pdfs)} PDFs)")
+
     write_jsonl(out_file, all_rows)
+    if progress: progress(len(pdfs), len(pdfs), "Text extraction complete")
 
     return {
         "artifact": str(
@@ -211,46 +291,8 @@ def _load_ner(model_path: str | Path):
     return spacy.load(str(model_path))
 
 
-def _ner_rows(
-    rows,
-    model_path: Path,
-    entity: str,
-):
-    ner_model = _load_ner(model_path)
-    annotated = []
-
-    for row in rows:
-        doc = ner_model(row["text"])
-
-        ner_spans = [
-            {
-                "start": span.start_char,
-                "end": span.end_char,
-                "label": entity,
-                "start_token": span.start,
-                "end_token": span.end,
-            }
-            for span in doc.ents
-        ]
-
-        row = dict(row)
-        row["spans"] = (
-            row.get("spans", []) + ner_spans
-        )
-        row["_annotator_id"] = "NER"
-        row["_session_id"] = "NER"
-        row["tokens"] = [
-            token.text
-            for token in doc
-        ]
-
-        annotated.append(row)
-
-    return annotated
-
-
-def entity_extraction(run_dir: Path):
-    models = ensure_models_exist()
+def entity_extraction(run_dir: Path, progress=None):
+    models = preload_ner_models()
 
     rows = read_jsonl(
         run_dir
@@ -258,23 +300,24 @@ def entity_extraction(run_dir: Path):
         / "input_data.jsonl"
     )
 
-    rows = _ner_rows(
-        rows,
-        models["method"],
-        "METHOD",
-    )
-
-    rows = _ner_rows(
-        rows,
-        models["activity"],
-        "ACTIVITY",
-    )
-
-    rows = _ner_rows(
-        rows,
-        models["goal"],
-        "GOAL",
-    )
+                                                                                
+                                                                      
+    annotated = [dict(row, spans=list(row.get("spans", []))) for row in rows]
+    total = max(1, len(rows) * 3)
+    done = 0
+    for entity in ("METHOD", "ACTIVITY", "GOAL"):
+        model = models[entity.lower()]
+        for i, row in enumerate(annotated):
+            doc = model(row["text"])
+            row["spans"].extend({"start": s.start_char, "end": s.end_char, "label": entity,
+                                "start_token": s.start, "end_token": s.end} for s in doc.ents)
+            if entity == "GOAL":
+                row["tokens"] = [token.text for token in doc]
+                row["_annotator_id"] = row["_session_id"] = "NER"
+            done += 1
+            if progress and (done % 10 == 0 or done == total):
+                progress(done, total, f"Finding {entity.lower()} entities ({i + 1}/{len(rows)} sentences)")
+    rows = annotated
 
     out = (
         run_dir
@@ -296,18 +339,9 @@ def entity_extraction(run_dir: Path):
     }
 
 
-def entity_disambiguation(run_dir: Path):
+def entity_disambiguation(run_dir: Path, progress=None):
     import requests
-    from transformers import (
-        AutoModelForSeq2SeqLM,
-        AutoTokenizer,
-    )
     from dependencies.trie import Trie
-
-    genre_model_path = os.getenv(
-        "GENRE_MODEL_PATH",
-        "/models/genre-linking-blink",
-    )
 
     trie_path = (
         "/app/dependencies/"
@@ -319,20 +353,7 @@ def entity_disambiguation(run_dir: Path):
             pickle.load(f)
         )
 
-    tokenizer = (
-        AutoTokenizer.from_pretrained(
-            genre_model_path,
-            local_files_only=True,
-        )
-    )
-
-    model = (
-        AutoModelForSeq2SeqLM.from_pretrained(
-            genre_model_path,
-            local_files_only=True,
-        )
-        .eval()
-    )
+    tokenizer, model = preload_genre_models()
 
     def safe_prefix_fn(batch_id, sent):
         allowed = trie.get(sent.tolist())
@@ -491,20 +512,15 @@ def entity_disambiguation(run_dir: Path):
         / "entity_extraction.jsonl"
     )
 
-    for item in data:
+    mentions = [(ri, si, span) for ri, item in enumerate(data) for si, span in enumerate(item.get("spans", [])) if span.get("label") == "METHOD"]
+    for index, (ri, si, span) in enumerate(mentions, start=1):
+        item = data[ri]
         text = item.get("text", "")
-
-        for span in item.get("spans", []):
-            if span.get("label") != "METHOD":
-                continue
-
-            result = disambiguate(
-                text,
-                int(span.get("start", 0)),
-                int(span.get("end", 0)),
-            )
-
-            span.update(result)
+        result = disambiguate(text, int(span.get("start", 0)), int(span.get("end", 0)))
+        span.update(result)
+        if progress: progress(index, max(1, len(mentions)), f"Resolving Wikipedia links ({index}/{len(mentions)})")
+    if progress and not mentions:
+        progress(1, 1, "No METHOD mentions to resolve")
 
     out = (
         run_dir
@@ -522,7 +538,7 @@ def entity_disambiguation(run_dir: Path):
     }
 
 
-def entity_linking(run_dir: Path):
+def entity_linking(run_dir: Path, progress=None):
     from information_linking_queries.information_linking_orcid import (
         information_linking_orcid,
     )
@@ -538,7 +554,7 @@ def entity_linking(run_dir: Path):
 
     headers = {"User-Agent": f"Random_User/1.0 (https://researchspotlight.org/random_user/; random_user@researchspotlight.org) information-linking-library/1.0"}
 
-    for row in data:
+    for row_index, row in enumerate(data, start=1):
         author_list = []
 
         for author in row.get(
@@ -621,10 +637,10 @@ def entity_linking(run_dir: Path):
                 "wikipedia_title"
             )
 
-            # ----------------------------------------------------
-            # Case 1: Entity Disambiguation could not resolve a
-            # Wikipedia page.
-            # ----------------------------------------------------
+                                                                  
+                                                               
+                             
+                                                                  
             if _is_missing_value(
                 wikipedia_url
             ):
@@ -671,10 +687,10 @@ def entity_linking(run_dir: Path):
 
                 continue
 
-            # ----------------------------------------------------
-            # Case 2: Wikipedia resolved, but the later metadata
-            # lookup fails or does not provide a canonical label.
-            # ----------------------------------------------------
+                                                                  
+                                                                
+                                                                 
+                                                                  
             try:
                 info = information_linking(
                     wikipedia_url=wikipedia_url,
@@ -773,8 +789,8 @@ def entity_linking(run_dir: Path):
                 )
 
             except Exception as exc:
-                # Never write literal "None" for the method name.
-                # Preserve the best available title or mention.
+                                                                 
+                                                               
                 if not _is_missing_value(
                     wikipedia_title
                 ):
@@ -811,6 +827,9 @@ def entity_linking(run_dir: Path):
                     wikipedia_url,
                     exc,
                 )
+
+        if progress:
+            progress(row_index, max(1, len(data)), f"Linking entities ({row_index}/{len(data)} rows)")
 
     out = (
         run_dir
@@ -993,6 +1012,7 @@ def _relation_objective(
 
 def relation_extraction(
     run_dir: Path,
+    progress=None,
 ):
     data = read_jsonl(
         run_dir
@@ -1000,7 +1020,7 @@ def relation_extraction(
         / "entity_linking.jsonl"
     )
 
-    for row in data:
+    for row_index, row in enumerate(data, start=1):
         text = str(
             row.get("text", "")
         )
@@ -1036,6 +1056,8 @@ def relation_extraction(
             )
 
         row["relations"] = relations
+        if progress:
+            progress(row_index, max(1, len(data)), f"Extracting relations ({row_index}/{len(data)} rows)")
 
     out = (
         run_dir
@@ -1075,7 +1097,7 @@ def _uri_safe(value: str) -> str:
     )
 
 
-def rdf_generation(run_dir: Path):
+def rdf_generation(run_dir: Path, progress=None):
     from rdflib import (
         Graph,
         Namespace,
@@ -1345,7 +1367,7 @@ def rdf_generation(run_dir: Path):
             )
         )
 
-    for row in data:
+    for row_index, row in enumerate(data, start=1):
         meta = row.get(
             "meta", {}
         )
@@ -1828,8 +1850,8 @@ def rdf_generation(run_dir: Path):
                             )
                         )
 
-        # Prefer relation extraction output, which preserves
-        # notebook semantics.
+                                                            
+                             
         for rel in row.get(
             "relations", []
         ):
@@ -1899,6 +1921,9 @@ def rdf_generation(run_dir: Path):
                                 gu,
                             )
                         )
+
+        if progress:
+            progress(row_index, max(1, len(data)), f"Generating RDF ({row_index}/{len(data)} rows)")
 
     out.parent.mkdir(
         parents=True,

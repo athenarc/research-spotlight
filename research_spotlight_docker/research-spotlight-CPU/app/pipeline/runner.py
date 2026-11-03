@@ -113,9 +113,16 @@ def execute_stage(run_id: str, stage: str, store: RunStore):
         state["status"] = "running"
         store.write_state(run_id, state)
         try:
-            output = _STAGE_TO_FN[stage](store.get(run_id))
+            def report(done, total, message="Processing"):
+                latest = store.read_state(run_id)
+                progress = latest["stages"][stage].setdefault("progress", {})
+                progress.update({"done": int(done), "total": int(total), "message": message})
+                store.write_state(run_id, latest)
+
+            output = _STAGE_TO_FN[stage](store.get(run_id), progress=report)
             state = store.read_state(run_id)
             state["stages"][stage]["status"] = "complete"
+            state["stages"][stage]["progress"] = {"done": 1, "total": 1, "message": "Complete"}
             state["stages"][stage]["output"] = output
             state["status"] = "ready"
             store.write_state(run_id, state)

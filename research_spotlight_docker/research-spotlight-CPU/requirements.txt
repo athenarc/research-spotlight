@@ -2,10 +2,14 @@ fastapi>=0.115,<1
 uvicorn[standard]>=0.30,<1
 python-multipart>=0.0.9,<1
 srsly
-wtpsplit
+wtpsplit-lite
 spacy>=3.8.7,<3.9
 requests
+huggingface-hub
 rdflib
 information-linking-queries
-glmocr[selfhosted]
+llama-cpp-python[server]
+pypdfium2
+Pillow
 git+https://github.com/explosion/spacy-transformers.git
+python-dotenv>=1.0,<2
