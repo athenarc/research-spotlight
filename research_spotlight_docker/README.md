@@ -239,5 +239,3 @@ docker compose up
 Research Spotlight uses machine-learning models and can require substantial RAM/VRAM.
 
 Large PDFs and especially multiple PDFs can increase memory usage considerably.
-
-This project is not designed as a bulk-processing system. For experiments, start with a small number of papers and monitor available RAM/VRAM.
