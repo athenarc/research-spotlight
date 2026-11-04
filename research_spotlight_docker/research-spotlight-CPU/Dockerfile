@@ -9,7 +9,8 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     GENRE_MODEL_PATH=/models/genre-linking-blink \
     MODEL_ROOT=/models \
     OCR_MODEL_PATH=/models/LightOnOCR-3-0.8B.Q6_K.gguf \
-    OCR_MMPROJ_PATH=/models/LightOnOCR-3-0.8B.mmproj-q8_0.gguf
+    OCR_MMPROJ_PATH=/models/LightOnOCR-3-0.8B.mmproj-q8_0.gguf \
+    HF_HUB_CACHE=/models/hf-cache
 
 WORKDIR /app
 
@@ -32,6 +33,9 @@ RUN python -m pip install --upgrade pip \
         https://huggingface.co/NikosKprl/en_deberta_v3_base_ner_goal/resolve/main/en_deberta_v3_base_ner_goal-1.0.0-py3-none-any.whl
 
 COPY app ./app
+COPY entrypoint.sh /app/entrypoint.sh
+# Strip Windows line endings so the script runs even if it was saved with CRLF.
+RUN sed -i 's/\r$//' /app/entrypoint.sh
 
 RUN python - <<'PY'
 from huggingface_hub import hf_hub_download, snapshot_download
@@ -50,6 +54,11 @@ snapshot_download(
         "vocab.json",
     ],
 )
+
+# Bake the sentence splitter into the image so nothing is downloaded at run time.
+from wtpsplit_lite import SaT
+
+SaT("sat-12l-sm")
 
 repo = "prithivMLmods/LightOnOCR-3-0.8B-GGUF"
 hf_hub_download(
@@ -77,8 +86,9 @@ EXPOSE 8000
 HEALTHCHECK \
     --interval=30s \
     --timeout=5s \
-    --start-period=30s \
+    --start-period=15m \
     --retries=3 \
-    CMD curl -fsS http://127.0.0.1:8000/api/pipeline >/dev/null || exit 1
+    CMD curl -fsS http://127.0.0.1:8000/api/models >/dev/null || exit 1
 
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

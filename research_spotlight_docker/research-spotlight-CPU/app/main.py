@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import shutil
 import subprocess
@@ -15,7 +16,7 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import FastAPI, File, HTTPException, UploadFile
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from starlette.background import BackgroundTask
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -35,6 +36,16 @@ STATIC_DIR = Path(__file__).resolve().parent / "static"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="Research Spotlight", version="0.1.0")
+
+
+class _SkipModelStatusAccessLog(logging.Filter):
+    """Hide the access-log line for /api/models: the entrypoint and healthcheck poll it while models load."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        return "/api/models" not in record.getMessage()
+
+
+logging.getLogger("uvicorn.access").addFilter(_SkipModelStatusAccessLog())
 store = RunStore(DATA_DIR)
 _model_load_error = None
 _ocr_server = None
@@ -42,23 +53,60 @@ _ocr_server_log = None
 _models_initialized = False
 
 
+OCR_READY_URL = "http://127.0.0.1:8080/v1/models"
+OCR_LOG_PATH = "/tmp/llama-cpp-ocr-server.log"
+_startup_step = "Starting"
+
+
+def _report(message: str):
+    """Show startup progress in `docker compose up` and expose it through /api/models."""
+    global _startup_step
+    _startup_step = message
+    print(f"[startup] {message}", flush=True)
+
+
 @app.on_event("startup")
 def preload_models():
     threading.Thread(target=initialize_models, daemon=True).start()
 
 
+def _wait_for_ocr_server(timeout: float = 900.0):
+    import requests
+
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        if _ocr_server.poll() is not None:
+            raise RuntimeError(f"OCR server exited with code {_ocr_server.returncode}.")
+        try:
+            # llama_cpp.server only accepts connections once its model is loaded, so any
+            # non-5xx answer means it is ready. No dedicated health route is required.
+            if requests.get(OCR_READY_URL, timeout=2).status_code < 500:
+                return
+        except requests.RequestException:
+            pass
+        time.sleep(2)
+    raise TimeoutError(f"OCR server did not answer on port 8080 within {int(timeout)}s.")
+
+
+def _tail_ocr_log(lines: int = 30) -> str:
+    try:
+        with open(OCR_LOG_PATH, encoding="utf-8", errors="replace") as f:
+            return "".join(f.readlines()[-lines:])
+    except OSError:
+        return ""
+
+
 def initialize_models():
     global _model_load_error, _ocr_server, _ocr_server_log, _models_initialized
-    from .pipeline.modules import (
-        preload_genre_models,
-        preload_ner_models,
-    )
+    from .pipeline.modules import preload_all_models
+
+    started = time.monotonic()
     try:
-        preload_ner_models()
-        preload_genre_models()
+        preload_all_models(report=_report)
+        _report("Starting OCR server...")
         model = os.getenv("OCR_MODEL_PATH", "/models/LightOnOCR-3-0.8B.Q6_K.gguf")
         projector = os.getenv("OCR_MMPROJ_PATH", "/models/LightOnOCR-3-0.8B.mmproj-q8_0.gguf")
-        _ocr_server_log = open("/tmp/llama-cpp-ocr-server.log", "w")
+        _ocr_server_log = open(OCR_LOG_PATH, "w")
         _ocr_server = subprocess.Popen([
             sys.executable, "-m", "llama_cpp.server",
             "--model", model,
@@ -69,9 +117,16 @@ def initialize_models():
             "--host", "127.0.0.1",
             "--port", "8080",
         ], stdout=_ocr_server_log, stderr=subprocess.STDOUT)
+        _wait_for_ocr_server()
         _models_initialized = True
+        _report(f"All models ready ({time.monotonic() - started:.0f}s)")
     except Exception as exc:
-        _model_load_error = str(exc)
+        _model_load_error = f"{type(exc).__name__}: {exc}"
+        print(f"[startup] FAILED: {_model_load_error}", flush=True)
+        traceback.print_exc()
+        tail = _tail_ocr_log()
+        if tail:
+            print("[startup] Last lines of the OCR server log:\n" + tail, flush=True)
         if _ocr_server is not None and _ocr_server.poll() is None:
             _ocr_server.terminate()
             _ocr_server.wait(timeout=10)
@@ -92,21 +147,25 @@ def stop_ocr_server():
         _ocr_server_log.close()
 
 
+def _current_status() -> str:
+    global _model_load_error
+    if _models_initialized and _ocr_server is not None and _ocr_server.poll() is not None and not _model_load_error:
+        _model_load_error = f"OCR server stopped (exit code {_ocr_server.returncode}). Restart the container."
+    if _model_load_error:
+        return "error"
+    if not _models_initialized:
+        return "starting"
+    return "ready"
+
+
 @app.get("/api/models")
 def model_status():
     from .pipeline.modules import NER_MODEL_NAMES
-    import requests
-    if _model_load_error:
-        status = "error"
-    elif not _models_initialized:
-        status = "starting"
-    else:
-        try:
-            status = "ready" if requests.get("http://127.0.0.1:8080/healthz", timeout=0.5).ok else "starting"
-        except requests.RequestException:
-            status = "starting" if _ocr_server and _ocr_server.poll() is None else "error"
-    return {"status": status,
-            "models": NER_MODEL_NAMES, "error": _model_load_error}
+
+    status = _current_status()
+    body = {"status": status, "step": _startup_step, "models": NER_MODEL_NAMES, "error": _model_load_error}
+    # 503 until everything is loaded, so Docker's healthcheck and the UI can rely on the status code.
+    return JSONResponse(body, status_code=200 if status == "ready" else 503)
 
 
 class AnnotationEdit(BaseModel):
@@ -178,6 +237,12 @@ async def create_run(
 def run_stage(run_id: str, stage: str):
     if stage not in {s["id"] for s in PIPELINE}:
         raise HTTPException(status_code=404, detail="Unknown stage")
+    status = _current_status()
+    if status != "ready":
+        raise HTTPException(
+            status_code=503,
+            detail=_model_load_error or "Models are still loading. Try again in a moment.",
+        )
     try:
         store.get(run_id)
     except FileNotFoundError:

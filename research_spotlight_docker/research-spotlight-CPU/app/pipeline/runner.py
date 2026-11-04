@@ -4,6 +4,7 @@ import json
 import os
 import threading
 import traceback
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -55,7 +56,15 @@ class RunStore:
         return json.loads(self._state_path(run_id).read_text(encoding="utf-8"))
 
     def write_state(self, run_id: str, state: dict[str, Any]):
-        self._state_path(run_id).write_text(json.dumps(state, indent=2), encoding="utf-8")
+        # Write to a unique temp file and rename it over run.json. The rename is atomic, so a
+        # concurrent read (the UI polls while a stage runs) never sees a half-written or empty file.
+        path = self._state_path(run_id)
+        tmp = path.with_name(f"{path.name}.{uuid.uuid4().hex}.tmp")
+        try:
+            tmp.write_text(json.dumps(state, indent=2), encoding="utf-8")
+            os.replace(tmp, path)
+        finally:
+            tmp.unlink(missing_ok=True)
 
     def describe(self, run_id: str):
         run_dir = self.get(run_id)

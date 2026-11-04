@@ -5,6 +5,8 @@ import logging
 import os
 import pickle
 import re
+import threading
+import time
 from pathlib import Path
 from typing import Any
 
@@ -74,33 +76,75 @@ NER_MODEL_NAMES = {
     "goal": os.getenv("HF_NER_GOAL", "NikosKprl/en_deberta_v3_base_ner_goal"),
 }
 
+SAT_MODEL_NAME = "sat-12l-sm"
+TRIE_PATH = "/app/dependencies/kilt_titles_trie_dict.pkl"
+
 _NER_MODELS = None
 _GENRE_MODELS = None
+_SENTENCE_SPLITTER = None
+_TRIE = None
+# Re-entrant so preload_all_models() can call the individual loaders while holding it.
+_MODEL_LOCK = threading.RLock()
+
+
+def preload_all_models(report=print):
+    """Load every model and lookup table the pipeline needs, once, before any run starts."""
+    steps = (
+        ("NER models (method, activity, goal)", preload_ner_models),
+        ("entity disambiguation model (GENRE)", preload_genre_models),
+        ("sentence splitter", preload_sentence_splitter),
+        ("Wikipedia title index", preload_trie),
+    )
+    for label, load in steps:
+        started = time.monotonic()
+        report(f"Loading {label}...")
+        load()
+        report(f"Loaded {label} ({time.monotonic() - started:.0f}s)")
 
 
 def preload_ner_models():
-    """Load all configured spaCy NER pipelines once at application startup."""
+    """Load all configured spaCy NER pipelines once."""
     global _NER_MODELS
-    if _NER_MODELS is None:
-        paths = ensure_models_exist()
-        _NER_MODELS = {key: _load_ner(path) for key, path in paths.items()}
-    return _NER_MODELS
+    with _MODEL_LOCK:
+        if _NER_MODELS is None:
+            paths = ensure_models_exist()
+            _NER_MODELS = {key: _load_ner(path) for key, path in paths.items()}
+        return _NER_MODELS
 
 
 def preload_genre_models():
     global _GENRE_MODELS
-    if _GENRE_MODELS is None:
-        from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
+    with _MODEL_LOCK:
+        if _GENRE_MODELS is None:
+            from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-        path = os.getenv("GENRE_MODEL_PATH", "/models/genre-linking-blink")
-        _GENRE_MODELS = (
-            AutoTokenizer.from_pretrained(path, local_files_only=True),
-            AutoModelForSeq2SeqLM.from_pretrained(
-                path,
-                local_files_only=True,
-            ).eval(),
-        )
-    return _GENRE_MODELS
+            path = os.getenv("GENRE_MODEL_PATH", "/models/genre-linking-blink")
+            _GENRE_MODELS = (
+                AutoTokenizer.from_pretrained(path, local_files_only=True),
+                AutoModelForSeq2SeqLM.from_pretrained(path, local_files_only=True).eval(),
+            )
+        return _GENRE_MODELS
+
+
+def preload_sentence_splitter():
+    global _SENTENCE_SPLITTER
+    with _MODEL_LOCK:
+        if _SENTENCE_SPLITTER is None:
+            from wtpsplit_lite import SaT
+
+            _SENTENCE_SPLITTER = SaT(SAT_MODEL_NAME)
+        return _SENTENCE_SPLITTER
+
+
+def preload_trie():
+    global _TRIE
+    with _MODEL_LOCK:
+        if _TRIE is None:
+            from dependencies.trie import Trie
+
+            with open(TRIE_PATH, "rb") as f:
+                _TRIE = Trie.load_from_dict(pickle.load(f))
+        return _TRIE
 
 
 def ensure_models_exist():
@@ -149,7 +193,6 @@ def text_extraction(run_dir: Path, progress=None):
     import pypdfium2 as pdfium
     import requests
     from PIL import Image
-    from wtpsplit_lite import SaT
 
     pdf_dir = run_dir / "PDF"
     out_dir = run_dir / "Text_Extraction"
@@ -174,7 +217,7 @@ def text_extraction(run_dir: Path, progress=None):
         ),
     )
 
-    sat = SaT("sat-12l-sm")
+    sat = preload_sentence_splitter()
     def pdf_images(pdf_path: Path):
         images = []
         with pdfium.PdfDocument(str(pdf_path)) as pdf:
@@ -341,17 +384,8 @@ def entity_extraction(run_dir: Path, progress=None):
 
 def entity_disambiguation(run_dir: Path, progress=None):
     import requests
-    from dependencies.trie import Trie
 
-    trie_path = (
-        "/app/dependencies/"
-        "kilt_titles_trie_dict.pkl"
-    )
-
-    with open(trie_path, "rb") as f:
-        trie = Trie.load_from_dict(
-            pickle.load(f)
-        )
+    trie = preload_trie()
 
     tokenizer, model = preload_genre_models()
 

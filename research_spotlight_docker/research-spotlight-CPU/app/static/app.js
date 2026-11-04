@@ -1,6 +1,7 @@
 const state = {
   pipeline: [],
   run: null,
+  modelsReady: false,
   stageIndex: 0,
 
   stageStartedAt: null,
@@ -4015,12 +4016,18 @@ function showStage() {
     );
 
   const canRun =
+    state.modelsReady &&
     !isRunning &&
     !isComplete &&
     !isPipelineRunning();
 
   $('runBtn').disabled =
     !canRun;
+
+  $('runBtn').title =
+    state.modelsReady
+      ? ''
+      : 'Models are still loading';
 
   $('runBtn')
     .classList.toggle(
@@ -4681,3 +4688,34 @@ $('downloadBtn').addEventListener('click', () => {
     );
   }
 })();
+
+/* Keep Run disabled until the server reports that every model is loaded. */
+async function waitForModels() {
+  while (true) {
+    let data = { status: 'starting' };
+    try {
+      const res = await fetch('/api/models');
+      data = await res.json();
+    } catch (_) {
+      // Server not reachable yet; keep polling.
+    }
+
+    if (data.status === 'ready') {
+      state.modelsReady = true;
+      if (state.run) {
+        showStage();
+      }
+      return;
+    }
+
+    if (data.status === 'error') {
+      $('runBtn').disabled = true;
+      $('runBtn').title = data.error || 'Model loading failed';
+      return;
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 2000));
+  }
+}
+
+waitForModels();
