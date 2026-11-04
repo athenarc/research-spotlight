@@ -51,9 +51,7 @@ html[data-theme="light"] {
 }
 
 
-/* ============================================================
-   GLOBAL
-   ============================================================ */
+
 
 * {
   box-sizing: border-box;
@@ -108,9 +106,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   APP LAYOUT
-   ============================================================ */
+
 
 .app-shell {
   display: grid;
@@ -119,9 +115,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   SIDEBAR
-   ============================================================ */
+
 
 .sidebar {
   border-right: 1px solid var(--line);
@@ -144,10 +138,7 @@ input:focus-visible {
   gap: 12px;
 }
 
-/*
- * Kept for compatibility in case the brand mark
- * is added back later.
- */
+
 .brand-mark {
   width: 42px;
   height: 42px;
@@ -199,9 +190,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   SIDEBAR MODULE LIST
-   ============================================================ */
+
 
 .step-list {
   margin-top: 14px;
@@ -317,9 +306,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   LOCKED SIDEBAR WHILE RUNNING
-   ============================================================ */
+
 
 .step-list.navigation-locked .step {
   pointer-events: none;
@@ -335,9 +322,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   MAIN AREA
-   ============================================================ */
+
 
 .main {
   padding: 34px 44px;
@@ -349,9 +334,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   TOP BAR
-   ============================================================ */
+
 
 .topbar {
   display: flex;
@@ -372,9 +355,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   THEME TOGGLE
-   ============================================================ */
+
 
 .theme-toggle {
   width: 44px;
@@ -408,18 +389,14 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   WORKSPACE
-   ============================================================ */
+
 
 .workspace {
   padding: 30px 0;
 }
 
 
-/* ============================================================
-   MAIN CARDS
-   ============================================================ */
+
 
 .hero-card,
 .stage-card {
@@ -442,9 +419,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   HERO / UPLOAD
-   ============================================================ */
+
 
 .hero-card {
   display: grid;
@@ -502,9 +477,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   UPLOAD PANEL
-   ============================================================ */
+
 
 .upload-panel {
   border: 1px solid var(--line);
@@ -517,9 +490,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   DROPZONE
-   ============================================================ */
+
 
 .dropzone {
   display: flex;
@@ -589,9 +560,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   UPLOAD ICON
-   ============================================================ */
+
 
 .upload-icon {
   width: 54px;
@@ -613,9 +582,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   FILE LIST
-   ============================================================ */
+
 
 .file-list {
   margin-top: 16px;
@@ -650,9 +617,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   METADATA UPLOAD
-   ============================================================ */
+
 
 .metadata-upload {
   display: flex;
@@ -675,9 +640,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   BUTTONS
-   ============================================================ */
+
 
 .primary-btn,
 .secondary-btn {
@@ -746,9 +709,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   COMPLETED MODULE = DISABLED RUN BUTTON
-   ============================================================ */
+
 
 .primary-btn.completed-disabled {
   background:
@@ -775,9 +736,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   STAGE
-   ============================================================ */
+
 
 .stage-card {
   padding: 28px;
@@ -830,9 +789,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   STATS
-   ============================================================ */
+
 
 .stats-grid {
   display: grid;
@@ -879,9 +836,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   EXECUTION / PREVIEW / TOTAL TIME
-   ============================================================ */
+
 
 .execution-card,
 .preview-card,
@@ -917,9 +872,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   TIMER
-   ============================================================ */
+
 
 .time-line {
   display: flex;
@@ -952,9 +905,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   PROGRESS BAR
-   ============================================================ */
+
 
 .progress-track {
   height: 8px;
@@ -994,9 +945,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   STAGE LOG
-   ============================================================ */
+
 
 .stage-log {
   color: var(--muted);
@@ -1015,9 +964,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   TOTAL TIME
-   ============================================================ */
+
 
 .total-time-card {
   display: flex;
@@ -1056,18 +1003,13 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   PREVIEW
-   ============================================================ */
+
 
 .preview-card {
   max-height: 520px;
   overflow: auto;
 
-  /*
-   * Gives the relation arrows enough room
-   * without changing the normal previews.
-   */
+  
   scrollbar-gutter: stable;
 }
 
@@ -1100,9 +1042,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   STAGE ACTIONS
-   ============================================================ */
+
 
 .stage-actions {
   display: flex;
@@ -1121,9 +1061,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   VISUALIZATION HEADER
-   ============================================================ */
+
 
 .visualization-header {
   display: flex;
@@ -1159,9 +1097,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   ENTITY LEGEND
-   ============================================================ */
+
 
 .entity-legend {
   display: flex;
@@ -1214,9 +1150,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   ENTITY / NER VISUALIZATION
-   ============================================================ */
+
 
 .ner-text {
   padding:
@@ -1240,15 +1174,13 @@ input:focus-visible {
 
   font-size: 17px;
 
-  white-space: normal;
+  white-space: pre-wrap;
 
   overflow-wrap: anywhere;
 }
 
 
-/* ============================================================
-   ENTITY SPANS
-   ============================================================ */
+
 
 .entity-span {
   position: relative;
@@ -1265,6 +1197,55 @@ input:focus-visible {
     4px solid
     transparent;
 }
+
+.entity-span.selected {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.entity-marker {
+  z-index: 2;
+  min-width: 48px;
+  border: 0;
+  cursor: pointer;
+  text-align: center;
+}
+
+.entity-marker.selected {
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.annotation-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.annotation-btn {
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--panel-3);
+  color: var(--text);
+  padding: 7px 10px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  transition: border-color .2s ease, background .2s ease;
+}
+
+.annotation-btn:hover { border-color: var(--accent); background: var(--accent-soft); }
+.annotation-btn.method { border-color: #7aecec; }
+.annotation-btn.activity { border-color: #45de2a; }
+.annotation-btn.goal { border-color: #e66225; }
+.annotation-btn.danger { color: var(--danger); }
+.annotation-feedback { min-width: 70px; color: var(--success); }
+.link-edit-label { display: grid; gap: 7px; margin-top: 14px; color: var(--muted); font-size: 11px; font-weight: 700; }
+.link-edit-input { width: 100%; border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; color: var(--text); background: var(--panel-2); }
 
 .entity-span .entity-label {
   display: inline-block;
@@ -1296,7 +1277,7 @@ input:focus-visible {
 }
 
 
-/* METHOD */
+
 
 .entity-span.method {
   border-color:
@@ -1316,7 +1297,7 @@ input:focus-visible {
 }
 
 
-/* ACTIVITY */
+
 
 .entity-span.activity {
   border-color:
@@ -1336,7 +1317,7 @@ input:focus-visible {
 }
 
 
-/* GOAL */
+
 
 .entity-span.goal {
   border-color:
@@ -1356,9 +1337,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   VISUALIZATION CONTROLS
-   ============================================================ */
+
 
 .visualization-controls {
   display: flex;
@@ -1416,9 +1395,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   ENTITY LINKING DETAILS
-   ============================================================ */
+
 
 .entity-details {
   margin-top: 12px;
@@ -1486,9 +1463,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   EMPTY VISUALIZATION
-   ============================================================ */
+
 
 .visualization-empty {
   color:
@@ -1499,9 +1474,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   METADATA VALIDATION
-   ============================================================ */
+
 
 #uploadValidation {
   color:
@@ -1521,9 +1494,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   RELATION EXTRACTION VISUALIZATION
-   ============================================================ */
+
 
 .relation-visualization {
   margin-top: 6px;
@@ -1608,11 +1579,7 @@ input:focus-visible {
 }
 
 
-/*
- * Main relation sentence.
- *
- * The large top padding creates the arrow lane.
- */
+
 .relation-sentence {
   position:
     relative;
@@ -1653,13 +1620,7 @@ input:focus-visible {
 }
 
 
-/*
- * Actual sentence text.
- *
- * The renderer inserts the sentence through textContent as one text
- * node. Backend offsets remain Python code-point offsets and are
- * converted to DOM UTF-16 offsets in app.js.
- */
+
 .relation-text {
   position:
     relative;
@@ -1674,9 +1635,7 @@ input:focus-visible {
     anywhere;
 }
 
-/*
- * SVG arrow layer.
- */
+
 .relation-svg {
   position:
     absolute;
@@ -1701,11 +1660,7 @@ input:focus-visible {
 }
 
 
-/*
- * Entity highlight overlays.
- *
- * These sit behind the sentence text.
- */
+
 .relation-highlight {
   position:
     absolute;
@@ -1727,7 +1682,7 @@ input:focus-visible {
 }
 
 
-/* DOMAIN = ACTIVITY */
+
 
 .relation-highlight.domain {
   border:
@@ -1751,7 +1706,7 @@ input:focus-visible {
 }
 
 
-/* RANGE = METHOD */
+
 
 .relation-highlight.range.method {
   border:
@@ -1775,7 +1730,7 @@ input:focus-visible {
 }
 
 
-/* RANGE = GOAL */
+
 
 .relation-highlight.range.goal {
   border:
@@ -1799,9 +1754,7 @@ input:focus-visible {
 }
 
 
-/*
- * Entity label sitting above domain/range.
- */
+
 .relation-entity-label {
   position:
     absolute;
@@ -1862,9 +1815,7 @@ input:focus-visible {
 }
 
 
-/*
- * Relation label sitting on the curved arrow.
- */
+
 .relation-edge-label {
   position:
     absolute;
@@ -1941,9 +1892,7 @@ input:focus-visible {
 }
 
 
-/*
- * Empty relation visualization.
- */
+
 .relation-empty {
   padding:
     28px 4px;
@@ -1959,9 +1908,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   RESPONSIVE
-   ============================================================ */
+
 
 @media (max-width: 1100px) {
   .app-shell {
@@ -2103,9 +2050,7 @@ input:focus-visible {
       10px;
   }
 
-  /*
-   * Relation visualization on small screens.
-   */
+  
   .relation-sentence {
     padding:
       92px 16px 26px;
@@ -2148,9 +2093,7 @@ input:focus-visible {
 }
 
 
-/* ============================================================
-   REDUCED MOTION
-   ============================================================ */
+
 
 @media (prefers-reduced-motion: reduce) {
   *,

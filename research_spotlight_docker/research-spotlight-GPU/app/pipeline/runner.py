@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 import traceback
+import uuid
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +38,9 @@ class RunStore:
         self.root.mkdir(parents=True, exist_ok=True)
 
     def get(self, run_id: str) -> Path:
+        # Run IDs are 12 hex chars from uuid4. Anything else (e.g. "..") could point outside the runs folder.
+        if not re.fullmatch(r"[0-9a-f]{12}", run_id):
+            raise FileNotFoundError(run_id)
         run_dir = self.root / run_id
         if not run_dir.exists():
             raise FileNotFoundError(run_id)
@@ -55,7 +60,15 @@ class RunStore:
         return json.loads(self._state_path(run_id).read_text(encoding="utf-8"))
 
     def write_state(self, run_id: str, state: dict[str, Any]):
-        self._state_path(run_id).write_text(json.dumps(state, indent=2), encoding="utf-8")
+        # Write to a unique temp file and rename it over run.json. The rename is atomic, so a
+        # concurrent read (the UI polls while a stage runs) never sees a half-written or empty file.
+        path = self._state_path(run_id)
+        tmp = path.with_name(f"{path.name}.{uuid.uuid4().hex}.tmp")
+        try:
+            tmp.write_text(json.dumps(state, indent=2), encoding="utf-8")
+            os.replace(tmp, path)
+        finally:
+            tmp.unlink(missing_ok=True)
 
     def describe(self, run_id: str):
         run_dir = self.get(run_id)
@@ -113,14 +126,26 @@ def execute_stage(run_id: str, stage: str, store: RunStore):
         state["status"] = "running"
         store.write_state(run_id, state)
         try:
-            output = _STAGE_TO_FN[stage](store.get(run_id))
+            # GPU state is per thread and each stage runs in its own thread, so set it up here too.
+            modules.require_gpu()
+
+            def report(done, total, message="Processing"):
+                latest = store.read_state(run_id)
+                progress = latest["stages"][stage].setdefault("progress", {})
+                progress.update({"done": int(done), "total": int(total), "message": message})
+                store.write_state(run_id, latest)
+
+            output = _STAGE_TO_FN[stage](store.get(run_id), progress=report)
             state = store.read_state(run_id)
+            state["stages"][stage].pop("error", None)  # clear the error left by an earlier failed attempt
             state["stages"][stage]["status"] = "complete"
+            state["stages"][stage]["progress"] = {"done": 1, "total": 1, "message": "Complete"}
             state["stages"][stage]["output"] = output
             state["status"] = "ready"
             store.write_state(run_id, state)
             return {"status": "complete", "run": store.describe(run_id)}
         except Exception as exc:
+            traceback.print_exc()  # the UI only gets str(exc); keep the full trace in the container log
             state = store.read_state(run_id)
             state["stages"][stage]["status"] = "error"
             state["stages"][stage]["error"] = str(exc)

@@ -1,40 +1,25 @@
-# ============================================================
-# Stage 1: GPU-enabled llama.cpp
-# ============================================================
-FROM ghcr.io/ggml-org/llama.cpp:server-cuda AS llama
-
-
-# ============================================================
-# Stage 2: Research Spotlight application
-# ============================================================
-FROM python:3.11-slim
+FROM nvidia/cuda:13.4.3-cudnn-runtime-ubuntu24.04
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+    PATH=/opt/venv/bin:${PATH} \
     HF_HOME=/cache/huggingface \
     TRANSFORMERS_CACHE=/cache/huggingface \
     HF_HUB_DISABLE_XET=1 \
     GENRE_MODEL_PATH=/models/genre-linking-blink \
-    HOME=/root \
     MODEL_ROOT=/models \
-    RS_DEPENDENCIES_DIR=/app/dependencies \
-    GLMOCR_CONFIG_PATH=/app/dependencies/config.yaml \
-    LLAMA_HF_MODEL=ggml-org/GLM-OCR-GGUF:Q8_0 \
-    LLAMA_HOST=127.0.0.1 \
-    LLAMA_PORT=8080 \
-    LLAMA_ARG_N_GPU_LAYERS=999 \
-    NVIDIA_VISIBLE_DEVICES=all \
-    NVIDIA_DRIVER_CAPABILITIES=compute,utility \
-    PATH=/opt/llama:${PATH} \
-	LD_LIBRARY_PATH=/opt/llama:/usr/local/cuda/lib64:/usr/local/lib/python3.11/site-packages/nvidia/nccl/lib:${LD_LIBRARY_PATH}
+    OCR_MODEL_PATH=/models/LightOnOCR-3-0.8B.Q6_K.gguf \
+    OCR_MMPROJ_PATH=/models/LightOnOCR-3-0.8B.mmproj-q8_0.gguf \
+    HF_HUB_CACHE=/models/hf-cache \
+    LD_LIBRARY_PATH=/opt/llama-b12110
 
 WORKDIR /app
 
-
-# ============================================================
-# System packages
-# ============================================================
+# build-essential: spacy-transformers is installed from git and compiles a C++ extension.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     ca-certificates \
@@ -43,48 +28,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Ubuntu 22.04 ships Python 3.10; uv fetches Python 3.11 directly (no Launchpad/PPA needed).
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+RUN uv venv -p 3.11 --seed /opt/venv
 
-# ============================================================
-# Copy GPU-enabled llama.cpp
-# ============================================================
-
-# llama-server + ggml libraries
-COPY --from=llama /app/ /opt/llama/
-
-# CUDA runtime libraries used by llama.cpp
-COPY --from=llama /usr/local/cuda/ /usr/local/cuda/
-
-
-# ============================================================
-# Python dependencies
-# ============================================================
 COPY requirements.txt ./requirements.txt
+# Prebuilt llama.cpp server with CUDA 13.4 (matches the base image); no compiling.
+RUN curl -fL https://github.com/ggml-org/llama.cpp/releases/download/b12110/llama-b12110-bin-ubuntu-cuda-13.4-x64.tar.gz \
+    | tar -xz -C /opt \
+    && ln -s /opt/llama-b12110/llama-server /usr/local/bin/llama-server
 
-RUN python -m pip install --upgrade pip \
-    && pip install \
-        --index-url https://download.pytorch.org/whl/cu132 \
-        torch \
-        torchvision \
+# onnxruntime-gpu replaces the onnxruntime pulled in by wtpsplit-lite so the sentence splitter runs on CUDA.
+RUN pip install --index-url https://download.pytorch.org/whl/cu130 torch==2.12.1 \
     && pip install -r requirements.txt \
+    && pip uninstall -y onnxruntime \
+    && pip install onnxruntime-gpu \
     && pip install \
         https://huggingface.co/NikosKprl/en_deberta_v3_base_ner_method/resolve/main/en_deberta_v3_base_ner_method-1.0.0-py3-none-any.whl \
         https://huggingface.co/NikosKprl/en_deberta_v3_base_ner_activity/resolve/main/en_deberta_v3_base_ner_activity-1.0.0-py3-none-any.whl \
         https://huggingface.co/NikosKprl/en_deberta_v3_base_ner_goal/resolve/main/en_deberta_v3_base_ner_goal-1.0.0-py3-none-any.whl
 
-
-# ============================================================
-# Application + dependencies
-# ============================================================
-COPY app ./app
-COPY dependencies ./dependencies
-COPY docker/entrypoint.sh /usr/local/bin/research-spotlight-entrypoint
-
-
-# ============================================================
-# Download GENRE model during image build
-# ============================================================
 RUN python - <<'PY'
-from huggingface_hub import snapshot_download
+from huggingface_hub import hf_hub_download, snapshot_download
 
 snapshot_download(
     repo_id="facebook/genre-linking-blink",
@@ -100,18 +65,26 @@ snapshot_download(
         "vocab.json",
     ],
 )
+
+# Bake the sentence splitter into the image so nothing is downloaded at run time.
+from wtpsplit_lite import SaT
+
+SaT("sat-12l-sm")
+
+repo = "prithivMLmods/LightOnOCR-3-0.8B-GGUF"
+hf_hub_download(
+    repo_id=repo,
+    filename="LightOnOCR-3-0.8B.Q6_K.gguf",
+    local_dir="/models",
+)
+hf_hub_download(
+    repo_id=repo,
+    filename="LightOnOCR-3-0.8B.mmproj-q8_0.gguf",
+    local_dir="/models",
+)
 PY
 
-
-# ============================================================
-# Download original notebook trie implementation + trie data
-# ============================================================
-RUN chmod +x /usr/local/bin/research-spotlight-entrypoint \
-    && mkdir -p \
-        /app/data/runs \
-        /models \
-        /cache/huggingface \
-        /root/.cache \
+RUN mkdir -p /app/data/runs /app/dependencies /cache/huggingface /root/.cache \
     && curl -fL \
         https://huggingface.co/facebook/genre-linking-blink/resolve/main/kilt_titles_trie_dict.pkl \
         -o /app/dependencies/kilt_titles_trie_dict.pkl \
@@ -119,45 +92,20 @@ RUN chmod +x /usr/local/bin/research-spotlight-entrypoint \
         https://huggingface.co/facebook/genre-linking-blink/raw/main/trie.py \
         -o /app/dependencies/trie.py
 
+# App code last, so editing it does not re-run the model downloads above.
+COPY app ./app
+COPY entrypoint.sh /app/entrypoint.sh
+# Strip Windows line endings so the script runs even if it was saved with CRLF.
+RUN sed -i 's/\r$//' /app/entrypoint.sh
 
-# ============================================================
-# Configure GLM-OCR -> local GPU llama-server
-# ============================================================
-RUN python - <<'PY'
-from pathlib import Path
-
-p = Path("/app/dependencies/config.yaml")
-s = p.read_text()
-
-s = s.replace(
-    "api_host: llama",
-    "api_host: 127.0.0.1"
-)
-
-p.write_text(s)
-PY
-
-
-# ============================================================
-# Runtime
-# ============================================================
 EXPOSE 8000
 
-
-# ============================================================
-# Health check
-# ============================================================
 HEALTHCHECK \
     --interval=30s \
     --timeout=5s \
-    --start-period=30s \
+    --start-period=15m \
     --retries=3 \
-    CMD curl -fsS \
-        http://127.0.0.1:8000/api/pipeline \
-        >/dev/null || exit 1
+    CMD curl -fsS http://127.0.0.1:8000/api/models >/dev/null || exit 1
 
-
-# ============================================================
-# Start FastAPI + GPU llama-server
-# ============================================================
-ENTRYPOINT ["/usr/local/bin/research-spotlight-entrypoint"]
+ENTRYPOINT ["sh", "/app/entrypoint.sh"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
