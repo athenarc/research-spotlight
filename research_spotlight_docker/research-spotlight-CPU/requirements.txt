@@ -8,7 +8,6 @@ requests
 huggingface-hub
 rdflib
 information-linking-queries
-llama-cpp-python[server]
 pypdfium2
 Pillow
 git+https://github.com/explosion/spacy-transformers.git

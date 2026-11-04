@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 import traceback
 import uuid
@@ -37,6 +38,9 @@ class RunStore:
         self.root.mkdir(parents=True, exist_ok=True)
 
     def get(self, run_id: str) -> Path:
+        # Run IDs are 12 hex chars from uuid4. Anything else (e.g. "..") could point outside the runs folder.
+        if not re.fullmatch(r"[0-9a-f]{12}", run_id):
+            raise FileNotFoundError(run_id)
         run_dir = self.root / run_id
         if not run_dir.exists():
             raise FileNotFoundError(run_id)
@@ -130,6 +134,7 @@ def execute_stage(run_id: str, stage: str, store: RunStore):
 
             output = _STAGE_TO_FN[stage](store.get(run_id), progress=report)
             state = store.read_state(run_id)
+            state["stages"][stage].pop("error", None)  # clear the error left by an earlier failed attempt
             state["stages"][stage]["status"] = "complete"
             state["stages"][stage]["progress"] = {"done": 1, "total": 1, "message": "Complete"}
             state["stages"][stage]["output"] = output
@@ -137,6 +142,7 @@ def execute_stage(run_id: str, stage: str, store: RunStore):
             store.write_state(run_id, state)
             return {"status": "complete", "run": store.describe(run_id)}
         except Exception as exc:
+            traceback.print_exc()  # the UI only gets str(exc); keep the full trace in the container log
             state = store.read_state(run_id)
             state["stages"][stage]["status"] = "error"
             state["stages"][stage]["error"] = str(exc)

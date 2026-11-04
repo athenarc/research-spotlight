@@ -78,8 +78,7 @@ def _wait_for_ocr_server(timeout: float = 900.0):
         if _ocr_server.poll() is not None:
             raise RuntimeError(f"OCR server exited with code {_ocr_server.returncode}.")
         try:
-            # llama_cpp.server only accepts connections once its model is loaded, so any
-            # non-5xx answer means it is ready. No dedicated health route is required.
+            # llama-server returns 503 until its model is loaded, so a non-5xx answer means ready.
             if requests.get(OCR_READY_URL, timeout=2).status_code < 500:
                 return
         except requests.RequestException:
@@ -108,12 +107,11 @@ def initialize_models():
         projector = os.getenv("OCR_MMPROJ_PATH", "/models/LightOnOCR-3-0.8B.mmproj-q8_0.gguf")
         _ocr_server_log = open(OCR_LOG_PATH, "w")
         _ocr_server = subprocess.Popen([
-            sys.executable, "-m", "llama_cpp.server",
-            "--model", model,
-            "--model_alias", "lightonocr",
-            "--clip_model_path", projector,
-            "--chat_format", "mtmd",
-            "--n_ctx", "20000",
+            "llama-server",
+            "-m", model,
+            "--mmproj", projector,
+            "--alias", "lightonocr",
+            "-c", "20000",
             "--host", "127.0.0.1",
             "--port", "8080",
         ], stdout=_ocr_server_log, stderr=subprocess.STDOUT)
@@ -318,7 +316,10 @@ def edit_annotation(run_id: str, stage: str, edit: AnnotationEdit):
 
 @app.get("/api/runs/{run_id}/artifacts/{artifact_path:path}")
 def artifact(run_id: str, artifact_path: str):
-    run_dir = (DATA_DIR / run_id).resolve()
+    try:
+        run_dir = store.get(run_id).resolve()
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="Artifact not found")
     file_path = (run_dir / artifact_path).resolve()
     if run_dir not in file_path.parents or not file_path.exists() or not file_path.is_file():
         raise HTTPException(status_code=404, detail="Artifact not found")

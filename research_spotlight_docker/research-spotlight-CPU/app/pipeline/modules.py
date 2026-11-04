@@ -255,9 +255,13 @@ def text_extraction(run_dir: Path, progress=None):
             )
             response.raise_for_status()
             result = response.json()
-            blocks = result["choices"][0]["message"]["content"].split("\n\n")
+            # llama-server may return this model's output in reasoning_content instead of content.
+            message = result["choices"][0]["message"]
+            blocks = (message.get("content") or message.get("reasoning_content") or "").split("\n\n")
             page_content = []
             for block in blocks:
+                if not block.strip():  # "".split() is [], so [-1] would raise IndexError
+                    continue
                 value = block.split(maxsplit=1)[-1].strip()
                 if block.startswith("![text+]"):
                     if page_content:

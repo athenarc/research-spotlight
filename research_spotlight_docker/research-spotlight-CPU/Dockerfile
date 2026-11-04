@@ -1,4 +1,4 @@
-FROM python:3.11-slim
+FROM python:3.11-slim-trixie
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -10,32 +10,32 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     MODEL_ROOT=/models \
     OCR_MODEL_PATH=/models/LightOnOCR-3-0.8B.Q6_K.gguf \
     OCR_MMPROJ_PATH=/models/LightOnOCR-3-0.8B.mmproj-q8_0.gguf \
-    HF_HUB_CACHE=/models/hf-cache
+    HF_HUB_CACHE=/models/hf-cache \
+    LD_LIBRARY_PATH=/opt/llama-b12110
 
 WORKDIR /app
 
+# build-essential: spacy-transformers is installed from git and compiles a C++ extension.
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     ca-certificates \
-    cmake \
     curl \
     git \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Prebuilt llama.cpp server, CPU build (needs glibc 2.38+, which trixie has); no compiling.
+RUN curl -fL https://github.com/ggml-org/llama.cpp/releases/download/b12110/llama-b12110-bin-ubuntu-x64.tar.gz \
+    | tar -xz -C /opt \
+    && ln -s /opt/llama-b12110/llama-server /usr/local/bin/llama-server
+
 COPY requirements.txt ./requirements.txt
-RUN python -m pip install --upgrade pip \
-    && pip install --index-url https://download.pytorch.org/whl/cpu torch==2.12.1 \
+RUN pip install --index-url https://download.pytorch.org/whl/cpu torch==2.12.1 \
     && pip install -r requirements.txt \
     && pip install \
         https://huggingface.co/NikosKprl/en_deberta_v3_base_ner_method/resolve/main/en_deberta_v3_base_ner_method-1.0.0-py3-none-any.whl \
         https://huggingface.co/NikosKprl/en_deberta_v3_base_ner_activity/resolve/main/en_deberta_v3_base_ner_activity-1.0.0-py3-none-any.whl \
         https://huggingface.co/NikosKprl/en_deberta_v3_base_ner_goal/resolve/main/en_deberta_v3_base_ner_goal-1.0.0-py3-none-any.whl
-
-COPY app ./app
-COPY entrypoint.sh /app/entrypoint.sh
-# Strip Windows line endings so the script runs even if it was saved with CRLF.
-RUN sed -i 's/\r$//' /app/entrypoint.sh
 
 RUN python - <<'PY'
 from huggingface_hub import hf_hub_download, snapshot_download
@@ -80,6 +80,12 @@ RUN mkdir -p /app/data/runs /app/dependencies /cache/huggingface /root/.cache \
     && curl -fL \
         https://huggingface.co/facebook/genre-linking-blink/raw/main/trie.py \
         -o /app/dependencies/trie.py
+
+# App code last, so editing it does not re-run the model downloads above.
+COPY app ./app
+COPY entrypoint.sh /app/entrypoint.sh
+# Strip Windows line endings so the script runs even if it was saved with CRLF.
+RUN sed -i 's/\r$//' /app/entrypoint.sh
 
 EXPOSE 8000
 
