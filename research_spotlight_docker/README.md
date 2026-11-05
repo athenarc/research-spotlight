@@ -84,51 +84,7 @@ Macs always use the CPU: Docker cannot give containers access to the Mac GPU. Ap
 
 ---
 
-# 4. Run on the CPU (also macOS)
-
-Build and start (the first build takes a while and downloads several GB of models):
-
-```bash
-docker compose up --build
-```
-
-Next time you can skip the build:
-
-```bash
-docker compose up
-```
-
-Go to <http://localhost:8080>. Keep this terminal open while the application is running.
-
-To stop the application press `Ctrl+C`, then remove the containers:
-
-```bash
-docker compose down
-```
-
----
-
-# 5. Run on the NVIDIA GPU
-
-Name the GPU service, otherwise Compose also starts the CPU one and they clash:
-
-```bash
-docker compose --profile gpu up --build research-spotlight-gpu
-```
-
-Go to <http://localhost:8080>.
-
-To stop it:
-
-```bash
-docker compose --profile gpu down
-```
-
-Compose uses all GPUs. To choose one GPU, use `docker run` instead (see below).
-
----
-
-# 6. Run with plain `docker run` (optional)
+# 4. Run with plain `docker run`
 
 Build once:
 
@@ -155,7 +111,7 @@ When the container starts, the log says either `Running on the NVIDIA GPU.` or `
 
 ---
 
-# 7. Open Research Spotlight
+# 5. Open Research Spotlight
 
 Once the log says `All models are loaded`, open:
 
@@ -167,7 +123,7 @@ The results of a run are inside the `data` folder you can also download them by 
 
 ---
 
-# 8. Additional information
+# 6. Additional information
 
 ### Input
 
