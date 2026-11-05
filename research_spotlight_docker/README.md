@@ -1,12 +1,5 @@
 # Research Spotlight Docker version
 
-This repository contains two Docker variants:
-
-- `research-spotlight-CPU` — CPU-based version. Use this on macOS and on machines without a supported NVIDIA GPU.
-- `research-spotlight-GPU` — NVIDIA CUDA GPU version. Use this when you have a supported NVIDIA GPU.
-
-> **⚠️ Important:** Use **only one variant at a time**.
-
 ### ⚠️ Disclaimer
 
 Research Spotlight is provided primarily for **educational, research, and demonstrator purposes**.
@@ -21,9 +14,11 @@ You need:
 - [Git](https://git-scm.com/)
 - [Docker](https://www.docker.com/)
 
-For the GPU version you additionally need:
+To use the GPU you additionally need:
 
-- An NVIDIA CUDA GPU
+- An NVIDIA CUDA GPU (and, on Linux, the [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html); on Windows, Docker Desktop with the WSL2 backend)
+
+There is **one image for everything**. It uses the NVIDIA GPU when you start it with GPU access, and the CPU otherwise.
 
 ---
 
@@ -31,7 +26,7 @@ For the GPU version you additionally need:
 
 ## macOS
 
-Install [**Docker Desktop for Mac**](https://docs.docker.com/desktop/setup/install/mac-install/) from the official Docker website:
+Install [**Docker Desktop for Mac**](https://docs.docker.com/desktop/setup/install/mac-install/) from the official Docker website.
 
 After installation, start Docker Desktop and verify it from a terminal:
 
@@ -42,19 +37,9 @@ docker compose version
 
 You should see version information for both commands.
 
-### Apple Silicon Macs
-
-Apple Silicon Macs (for example M1, M2, M3, M4) should use:
-
-```text
-research-spotlight-CPU
-```
-
----
-
 ## Windows
 
-Install [**Docker Desktop for Windows**](https://docs.docker.com/desktop/setup/install/windows-install/) from the official Docker website:
+Install [**Docker Desktop for Windows**](https://docs.docker.com/desktop/setup/install/windows-install/) from the official Docker website.
 
 After installation, start Docker Desktop and verify:
 
@@ -62,20 +47,11 @@ After installation, start Docker Desktop and verify:
 docker --version
 docker compose version
 ```
-
-If you have an NVIDIA GPU and want to use the GPU version, make sure your NVIDIA driver and Docker Desktop/WSL2 GPU support are working before starting the project.
-
-If you do not have a supported NVIDIA GPU, use:
-
-```text
-research-spotlight-CPU
-```
-
 ---
 
 ## Linux
 
-You can install Docker Engine using the [official Docker instructions](https://docs.docker.com/engine/install/) for your Linux distribution:
+You can install Docker Engine using the [official Docker instructions](https://docs.docker.com/engine/install/) for your Linux distribution.
 
 Verify the installation:
 
@@ -86,79 +62,45 @@ docker compose version
 
 ---
 
-# 2. Clone the repository
+# 2. Get the code
 
-Clone the repository using:
+Clone the repository and enter the `research_spotlight_docker_container` folder (the one that contains the `Dockerfile`):
+
 ```bash
 git clone https://github.com/athenarc/research-spotlight.git
+cd research-spotlight/research_spotlight_docker/research_spotlight_docker_container
 ```
-
-Then enter the repository:
-
-```bash
-cd research-spotlight/research_spotlight_docker
-```
-
-You should see folders similar to:
-
-```text
-research-spotlight-CPU/
-research-spotlight-GPU/
-```
-
 ---
 
-# 3. Choose the correct version
+# 3. Choose how to run it
 
-Use the following rule:
-
-| Your computer | Folder to use |
+| Your computer | Command |
 |---|---|
-| macOS Intel | `research-spotlight-CPU` |
-| macOS Apple Silicon | `research-spotlight-CPU` |
-| Windows without NVIDIA GPU | `research-spotlight-CPU` |
-| Linux without NVIDIA GPU | `research-spotlight-CPU` |
-| Windows with supported NVIDIA GPU | `research-spotlight-GPU` |
-| Linux with supported NVIDIA GPU | `research-spotlight-GPU` |
+| macOS (Intel or Apple Silicon) | CPU command |
+| Windows / Linux without NVIDIA GPU | CPU command |
+| Windows / Linux with NVIDIA GPU | GPU command |
+
+Macs always use the CPU: Docker cannot give containers access to the Mac GPU. Apple Silicon (M1–M4) builds a native arm64 image automatically.
 
 ---
 
-# 4. Run the CPU version
+# 4. Run on the CPU (also macOS)
 
-Use this version on macOS and on computers without a supported NVIDIA GPU.
-
-From the repository root:
+Build and start (the first build takes a while and downloads several GB of models):
 
 ```bash
-cd research-spotlight-CPU
+docker compose up --build
 ```
 
-Build the Docker image:
-
-```bash
-docker compose build
-```
-
-Start the application:
+Next time you can skip the build:
 
 ```bash
 docker compose up
 ```
 
-Go to this URL:
+Go to <http://localhost:8080>. Keep this terminal open while the application is running.
 
-```bash
-http://localhost:8000
-```
-Keep this terminal open while the application is running.
-
-To stop the application:
-
-```text
-Ctrl+C
-```
-
-To stop the background containers:
+To stop the application press `Ctrl+C`, then remove the containers:
 
 ```bash
 docker compose down
@@ -166,61 +108,75 @@ docker compose down
 
 ---
 
-# 5. Run the NVIDIA GPU version
+# 5. Run on the NVIDIA GPU
 
-Use this version only when your NVIDIA GPU is correctly configured for Docker.
-
-From the repository root:
+Name the GPU service, otherwise Compose also starts the CPU one and they clash:
 
 ```bash
-cd research-spotlight-GPU
+docker compose --profile gpu up --build research-spotlight-gpu
 ```
 
-Then build the image:
-
-```bash
-docker compose build
-```
-
-Start the application:
-
-```bash
-docker compose up
-```
-
-Go to this URL:
-
-```bash
-http://localhost:8000
-```
+Go to <http://localhost:8080>.
 
 To stop it:
 
 ```bash
-docker compose down
+docker compose --profile gpu down
 ```
+
+Compose uses all GPUs. To choose one GPU, use `docker run` instead (see below).
 
 ---
 
-# 6. Open Research Spotlight
+# 6. Run with plain `docker run` (optional)
 
-Once the container is running, Docker Compose will expose the application's configured port.
+Build once:
 
-Use the the following URL to access the Web UI:
+```bash
+docker build -t research-spotlight .
+```
+
+Then run. CPU:
+
+```bash
+docker run -p 127.0.0.1:8080:8000 -v "${PWD}/data:/app/data" research-spotlight
+```
+
+GPU, all GPUs / one specific GPU:
+
+```bash
+docker run --gpus all -p 127.0.0.1:8080:8000 -v "${PWD}/data:/app/data" research-spotlight
+docker run --gpus device=1 -p 127.0.0.1:8080:8000 -v "${PWD}/data:/app/data" research-spotlight
+```
+
+`${PWD}` works in PowerShell, macOS and Linux. In Windows `cmd` use `%cd%` instead.
+
+When the container starts, the log says either `Running on the NVIDIA GPU.` or `Running on the CPU`. If you expected the GPU and see CPU, you forgot `--gpus`/the GPU service.
+
+---
+
+# 7. Open Research Spotlight
+
+Once the log says `All models are loaded`, open:
 
 ```text
-http://localhost:8000
+http://localhost:8080
 ```
-The results of a run are inside the `data` folder.
+
+The results of a run are inside the `data` folder you can also download them by pressing `download run` on the end of the workflow.
 
 ---
 
-# 7. Additional information
+# 8. Additional information
 
 ### Input
 
 The input should be PDF(s) renamed as `1.pdf`, `2.pdf`, `3.pdf` alongside the required metadata.
 Check the PDF folder for examples.
+
+### Configuration (optional)
+
+To use your own NER models, copy `.env.example` to `.env` and edit it. Compose picks it up automatically; with `docker run` add `--env-file .env`.
 
 ### Rebuilding from scratch
 
@@ -234,8 +190,12 @@ docker compose up
 
 `--no-cache` forces Docker to rebuild the image layers instead of reusing the existing build cache.
 
+### Disk space
+
+The image is large (about 26 GB) because it contains both the CUDA libraries and the models.
+
 ### Out-of-memory errors
 
 Research Spotlight uses machine-learning models and can require substantial RAM/VRAM.
 
-Large PDFs and especially multiple PDFs can increase memory usage considerably.
+Large PDFs and especially multiple PDFs can increase memory usage considerably. On Mac or Windows, raise the memory limit in Docker Desktop (Settings → Resources; 8 GB or more).

@@ -1,9 +1,0 @@
-__pycache__
-*.pyc
-.venv
-.git
-.gitignore
-data/runs/*
-.env
-.env.*
-!.env.example

@@ -1,0 +1,36 @@
+services:
+  # CPU (and Apple Silicon Macs):  docker compose up --build
+  research-spotlight: &app
+    build: .
+    image: research-spotlight:latest
+
+    ports:
+      - "127.0.0.1:8080:8000"
+
+    env_file:
+      - path: .env
+        required: false
+
+    volumes:
+      - ./data:/app/data
+      - research-spotlight-cache:/root/.cache
+      - research-spotlight-hf:/cache/huggingface
+
+    restart: unless-stopped
+
+  # NVIDIA GPU:  docker compose --profile gpu up --build research-spotlight-gpu
+  # Needs the NVIDIA Container Toolkit on the host.
+  research-spotlight-gpu:
+    <<: *app
+    profiles: [gpu]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+
+volumes:
+  research-spotlight-cache:
+  research-spotlight-hf:

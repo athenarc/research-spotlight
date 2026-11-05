@@ -87,24 +87,35 @@ _TRIE = None
 _MODEL_LOCK = threading.RLock()
 
 
-def require_gpu():
-    """The app runs on an NVIDIA GPU only: fail at startup instead of silently falling back."""
-    import onnxruntime as ort
-    import spacy
+def device() -> str:
+    """'cuda' when the container was started with GPU access (docker run --gpus ...), else 'cpu'."""
     import torch
 
-    if not torch.cuda.is_available():
-        raise RuntimeError("PyTorch cannot see an NVIDIA GPU. Start the container with GPU access (see docker-compose.yml).")
+    return "cuda" if torch.cuda.is_available() else "cpu"
+
+
+def setup_device() -> str:
+    """Pick GPU or CPU and configure spaCy for it. Call once per thread: spaCy's GPU state is per thread."""
+    if device() == "cpu":
+        return "cpu"
+
+    import onnxruntime as ort
+    import spacy
+
+    # A GPU is visible, so a half-working CUDA stack is a build bug: fail loudly instead of running slowly.
     if "CUDAExecutionProvider" not in ort.get_available_providers():
-        raise RuntimeError("onnxruntime-gpu cannot use CUDA for the sentence splitter.")
+        raise RuntimeError("A GPU is visible but onnxruntime-gpu cannot use CUDA for the sentence splitter.")
     # Raises if cupy / CUDA is unavailable; also moves spaCy and spacy-transformers to the GPU.
     spacy.require_gpu()
+    return "cuda"
 
 
 def preload_all_models(report=print):
     """Load every model and lookup table the pipeline needs, once, before any run starts."""
-    report("Checking NVIDIA GPU...")
-    require_gpu()
+    if setup_device() == "cuda":
+        report("Running on the NVIDIA GPU.")
+    else:
+        report("Running on the CPU (add --gpus all to docker run to use an NVIDIA GPU).")
     steps = (
         ("NER models (method, activity, goal)", preload_ner_models),
         ("entity disambiguation model (GENRE)", preload_genre_models),
@@ -137,7 +148,7 @@ def preload_genre_models():
             path = os.getenv("GENRE_MODEL_PATH", "/models/genre-linking-blink")
             _GENRE_MODELS = (
                 AutoTokenizer.from_pretrained(path, local_files_only=True),
-                AutoModelForSeq2SeqLM.from_pretrained(path, local_files_only=True).to("cuda").eval(),
+                AutoModelForSeq2SeqLM.from_pretrained(path, local_files_only=True).to(device()).eval(),
             )
         return _GENRE_MODELS
 
@@ -148,7 +159,8 @@ def preload_sentence_splitter():
         if _SENTENCE_SPLITTER is None:
             from wtpsplit_lite import SaT
 
-            _SENTENCE_SPLITTER = SaT(SAT_MODEL_NAME, ort_providers=["CUDAExecutionProvider"])
+            provider = "CUDAExecutionProvider" if device() == "cuda" else "CPUExecutionProvider"
+            _SENTENCE_SPLITTER = SaT(SAT_MODEL_NAME, ort_providers=[provider])
         return _SENTENCE_SPLITTER
 
 
@@ -443,7 +455,7 @@ def entity_disambiguation(run_dir: Path, progress=None):
                 **tokenizer(
                     sentence,
                     return_tensors="pt",
-                ).to("cuda"),
+                ).to(device()),
                 num_beams=5,
                 num_return_sequences=1,
                 prefix_allowed_tokens_fn=

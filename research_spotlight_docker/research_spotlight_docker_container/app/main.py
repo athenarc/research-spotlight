@@ -97,7 +97,7 @@ def _tail_ocr_log(lines: int = 30) -> str:
 
 def initialize_models():
     global _model_load_error, _ocr_server, _ocr_server_log, _models_initialized
-    from .pipeline.modules import preload_all_models
+    from .pipeline.modules import device, preload_all_models
 
     started = time.monotonic()
     try:
@@ -111,6 +111,7 @@ def initialize_models():
             "-m", model,
             "--mmproj", projector,
             "--alias", "lightonocr",
+            "-ngl", "all" if device() == "cuda" else "0",
             "-c", "20000",
             "--host", "127.0.0.1",
             "--port", "8080",

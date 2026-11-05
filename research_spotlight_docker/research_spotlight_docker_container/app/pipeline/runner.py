@@ -126,6 +126,9 @@ def execute_stage(run_id: str, stage: str, store: RunStore):
         state["status"] = "running"
         store.write_state(run_id, state)
         try:
+            # GPU state is per thread and each stage runs in its own thread, so set it up here too.
+            modules.setup_device()
+
             def report(done, total, message="Processing"):
                 latest = store.read_state(run_id)
                 progress = latest["stages"][stage].setdefault("progress", {})
