@@ -6,7 +6,6 @@ Before running the project, make sure you have:
 
 * **Python 3.13**
 * **Jupyter / JupyterLab**
-* **[llama.cpp](https://llama.app)**
 
 Clone the repository and enter the project directory:
 
@@ -34,33 +33,6 @@ source .venv/bin/activate
 
 ```powershell
 .venv\Scripts\activate
-```
-
-## Run the GLM-OCR Server
-
-GLM-OCR is run locally through `llama.cpp`.
-
-Start the server with:
-
-```bash
-llama-server -hf ggml-org/GLM-OCR-GGUF:Q8_0 --port 8080
-```
-
-The first time you run this command, `llama.cpp` will download the GLM-OCR model from Hugging Face.
-Keep this terminal running while using the notebook.
-
-## Run the Notebook
-
-With the virtual environment activated, start Jupyter:
-
-```bash
-jupyter lab
-```
-
-or:
-
-```bash
-jupyter notebook
 ```
 
 Open the project notebook and run the cells.
