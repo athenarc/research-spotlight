@@ -32,6 +32,10 @@ except ImportError:
 from .pipeline.runner import PIPELINE, RunStore, execute_stage
 
 DATA_DIR = Path(os.getenv("RS_DATA_DIR", BASE_DIR / "data" / "runs"))
+if os.getenv("SAVE_RUNS", "true").strip().lower() in {"false", "0", "no", "off"}:
+    # Outside the ./data mount, so saved runs are never touched; wiped on every start.
+    DATA_DIR = Path(tempfile.gettempdir()) / "rs-runs"
+    shutil.rmtree(DATA_DIR, ignore_errors=True)
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 

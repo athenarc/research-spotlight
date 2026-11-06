@@ -84,30 +84,31 @@ Macs always use the CPU: Docker cannot give containers access to the Mac GPU. Ap
 
 ---
 
-# 4. Run with plain `docker run`
+# 4. Build and run
 
-Build once:
+Rename `.env.example` to `.env` and change the values for your setup.
 
-```bash
-docker build -t research-spotlight .
-```
-
-Then run. CPU:
+Build once (CPU and GPU share the same image):
 
 ```bash
-docker run -p 127.0.0.1:8080:8000 -v "${PWD}/data:/app/data" research-spotlight
+docker compose build
 ```
 
-GPU, all GPUs / one specific GPU:
+Then start it. CPU:
 
 ```bash
-docker run --gpus all -p 127.0.0.1:8080:8000 -v "${PWD}/data:/app/data" research-spotlight
-docker run --gpus device=1 -p 127.0.0.1:8080:8000 -v "${PWD}/data:/app/data" research-spotlight
+docker compose up
 ```
 
-`${PWD}` works in PowerShell, macOS and Linux. In Windows `cmd` use `%cd%` instead.
+NVIDIA GPU:
 
-When the container starts, the log says either `Running on the NVIDIA GPU.` or `Running on the CPU`. If you expected the GPU and see CPU, you forgot `--gpus`/the GPU service.
+```bash
+docker compose --profile gpu up
+```
+
+To always use the GPU without typing `--profile gpu`, set `COMPOSE_PROFILES=gpu` in `.env`.
+
+When the container starts, the log says either `Running on the NVIDIA GPU.` or `Running on the CPU`. If you expected the GPU and see CPU, you forgot `--profile gpu`.
 
 ---
 
@@ -119,7 +120,7 @@ Once the log says `All models are loaded`, open:
 http://localhost:8080
 ```
 
-The results of a run are inside the `data` folder you can also download them by pressing `download run` on the end of the workflow.
+The results of a run are inside the `data` folder (unless `SAVE_RUNS=false`, see below). You can also download them by pressing `download run` at the end of the workflow.
 
 ---
 
@@ -132,7 +133,15 @@ Check the PDF folder for examples.
 
 ### Configuration (optional)
 
-To use your own NER models, copy `.env.example` to `.env` and edit it. Compose picks it up automatically; with `docker run` add `--env-file .env`.
+Edit the `.env` file next to `docker-compose.yml`; Compose picks it up automatically.
+
+| Setting | Meaning |
+|---|---|
+| `HF_NER_METHOD`, `HF_NER_ACTIVITY`, `HF_NER_GOAL` | Use your own NER models. |
+| `COMPOSE_PROFILES` | `cpu` (default) or `gpu`: what plain `docker compose up` starts. |
+| `SAVE_RUNS` | `true` (default): runs stay in `data/` after the container is reset. `false`: runs are deleted whenever the container starts or restarts; download your results with `download run` at the end of the workflow. Runs already saved in `data/` are never deleted by this setting. |
+
+After changing `.env`, restart with `docker compose down` and `docker compose up`.
 
 ### Rebuilding from scratch
 

@@ -1,8 +1,11 @@
 services:
-  # CPU (and Apple Silicon Macs):  docker compose up --build
+  # Build once (both services share the image):  docker compose build
+  # CPU (and Apple Silicon Macs):  docker compose up
+  # Which one `up` starts comes from COMPOSE_PROFILES in .env (default: cpu).
   research-spotlight: &app
     build: .
     image: research-spotlight:latest
+    profiles: [cpu]
 
     ports:
       - "127.0.0.1:8080:8000"
@@ -18,7 +21,7 @@ services:
 
     restart: unless-stopped
 
-  # NVIDIA GPU:  docker compose --profile gpu up --build research-spotlight-gpu
+  # NVIDIA GPU:  docker compose --profile gpu up
   # Needs the NVIDIA Container Toolkit on the host.
   research-spotlight-gpu:
     <<: *app
